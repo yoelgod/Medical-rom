@@ -1,2 +1,2 @@
-# Modelado-chambing-
-Repositorio para mostrar el proyecto de la clase Programacion Grafica
+# Medical-rom
+This project involves creating a 3D medical office using OpenGL. Essential elements such as walls, doors, furniture, and medical equipment will be modeled using geometric primitives and imported models. A first-person camera will be implemented to explore the environment, along with lighting and textures for increased realism. Additionally, basic interaction will be added, such as door opening and collision detection. The goal is to develop an immersive and functional visual representation of a medical space, applying fundamental computer graphics techniques.
