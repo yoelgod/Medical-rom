@@ -9,6 +9,11 @@ import numpy as np
 from OpenGL.GLU import gluPerspective  # Para la proyección de perspectiva
 from OpenGL.GL import glLoadIdentity  # Para manejar las matrices de vista
 from OpenGL.GLU import gluLookAt
+from PIL import Image
+import numpy as np
+from OpenGL.GL import *
+from OpenGL.GLUT import *
+from OpenGL.GLU import *
 
 
 # Función para inicializar la ventana con tamaño fijo
@@ -26,94 +31,135 @@ def inicializar_ventana(titulo="Proyecto OpenGL Paso 1"):
     #Establecer el contexto de OpenGL en la ventana actual
     glfw.make_context_current(ventana)
     glEnable(GL_DEPTH_TEST)  # Habilitar la prueba de profundidad
+    
     return ventana
 
+#FUncion para poder ver la textura
+def cargar_textura(ruta):
+    # Abrir imagen
+    imagen = Image.open(ruta)
+    imagen = imagen.transpose(Image.FLIP_TOP_BOTTOM)  # Voltear la imagen para OpenGL
+
+    # Convertir la imagen a un formato adecuado para OpenGL
+    ancho, alto = imagen.size
+    imagen_data = imagen.tobytes("raw", "RGB", 0, -1)
+
+    # Crear y activar la textura
+    textura = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, textura)
+
+    # Configuración de la textura
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ancho, alto, 0, GL_RGB, GL_UNSIGNED_BYTE, imagen_data)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+
+    return textura
+
 # Función para crear un cubo (una pared, suelo o techo)
-def crear_cubo():
-    vertices = np.array([
-        # -------- PARED FRONTAL (con hueco para puerta) --------
-        # Izquierda de la puerta
-        -2.0, -2.0,  2.0,
-        -0.6, -2.0,  2.0,   
-        -0.6,  1.0,  2.0,
-        -2.0,  1.0,  2.0,
-
-        # Derecha de la puerta  
-        0.6, -2.0,  2.0,
-        2.0, -2.0,  2.0,
-        2.0,  2.0,  2.0,
-        0.6,  2.0,  2.0,
-
-        # Parte superior de la puerta
-        -0.6,  1.0,  2.0,
-        0.6,  1.0,  2.0,
-        0.6,  2.0,  2.0,
-        -0.6,  2.0,  2.0,
-
-        # -------- PARED TRASERA --------
-        -2.0, -2.0, -2.0,
-        2.0, -2.0, -2.0,
-        2.0,  2.0, -2.0,
-        -2.0,  2.0, -2.0,
-
-        # -------- PARED IZQUIERDA --------
-        -2.0, -2.0, -2.0,
-        -2.0, -2.0,  2.0,
-        -2.0,  2.0,  2.0,
-        -2.0,  2.0, -2.0,
-
-        # -------- PARED DERECHA --------
-        2.0, -2.0, -2.0,
-        2.0, -2.0,  2.0,
-        2.0,  2.0,  2.0,
-        2.0,  2.0, -2.0,
-
-        # -------- TECHO --------
-        -2.0,  2.0, -2.0,
-        2.0,  2.0, -2.0,
-        2.0,  2.0,  2.0,
-        -2.0,  2.0,  2.0,
-
-        # -------- SUELO --------
-        -2.0, -2.0, -2.0,
-        2.0, -2.0, -2.0,
-        2.0, -2.0,  2.0,
-        -2.0, -2.0,  2.0
-    ], dtype=np.float32) # specificamos que los datos son de tipo float32
-
-    #Definir el buffer de vértices
-    #Crear y vincular el VAO (contiene el estado de los vértices)
-    VAO = glGenVertexArrays(1)  #Crear el VAO
-    glBindVertexArray(VAO)  #Vincular el VAO
+def dibujar_cuarto():
+    # Cargar la textura para el cuarto exterior
+    textura_pared = cargar_textura('C:/medical-room-repo/Medical-rom/wall_texture.jpg')
+    textura_techo = cargar_textura('C:/medical-room-repo/Medical-rom/roof_texture.jpg')
     
-    #Crear y vincular el VBO (almacena los datos de los vértices)
-    VBO = glGenBuffers(1)   #Crear el VBO
-    glBindBuffer(GL_ARRAY_BUFFER, VBO)  #Vincular el VBO
+    glColor3f(1.0, 1.0, 1.0)  # Importante: color blanco para no alterar la textura
     
-    #Subir los datos de los vértices al buffer
-    glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)    #Cargar los datos al VBO
+    glEnable(GL_TEXTURE_2D)
+    
+    #Carga la textura de las paredes
+    glBindTexture(GL_TEXTURE_2D, textura_techo)
+    
+    # --- TECHO ---
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-2.0, 2.0, -2.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(2.0, 2.0, -2.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(2.0, 2.0, 2.2)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-2.0, 2.0, 2.2)
+    glEnd()
+    
+    #Carga la textura de las paredes
+    glBindTexture(GL_TEXTURE_2D, textura_pared)
 
-    # Configurar el layout de los vértices
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, None)    #Definir el formato de los datos
-    glEnableVertexAttribArray(0)    #Activar el atributo de vértices
-    
-    return VAO
+    # --- PARED TRASERA ---
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-2.0, -2.0, -2.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(2.0, -2.0, -2.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(2.0, 2.0, -2.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-2.0, 2.0, -2.0)
+    glEnd()
 
-#Función para dibujar el cuarto
-def crear_cuarto():
-    glColor3f(1.0, 1.0, 1.0)  # Establecer el color verde para el cubo
-    #Crear un cubo para representar las paredes, suelo y techo
-    cubo = crear_cubo()
-    
-    #Dibujar el cubo
-    glDrawArrays(GL_QUADS, 0, 24)
+    # --- PARED IZQUIERDA ---
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-2.0, -2.0, -2.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-2.0, -2.0, 2.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-2.0, 2.0, 2.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-2.0, 2.0, -2.0)
+    glEnd()
+
+    # --- PARED DERECHA ---
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(2.0, -2.0, -2.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(2.0, -2.0, 2.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(2.0, 2.0, 2.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(2.0, 2.0, -2.0)
+    glEnd()
+
+    # --- SUELO ---
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-2.0, -2.0, -2.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(2.0, -2.0, -2.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(2.0, -2.0, 2.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-2.0, -2.0, 2.0)
+    glEnd()
+
+    # --- PARED FRONTAL CON HUECO (puerta sin textura) ---
+
+    # Parte izquierda de la pared frontal
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-2.0, -2.0, 2.0)
+    glTexCoord2f(0.3, 0.0); glVertex3f(-0.75, -2.0, 2.0)
+    glTexCoord2f(0.3, 0.35); glVertex3f(-0.75, 0.7, 2.0)
+    glTexCoord2f(0.0, 0.35); glVertex3f(-2.0, 0.7, 2.0)
+    glEnd()
+
+    # Parte derecha de la pared frontal
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.7, 0.0); glVertex3f(0.75, -2.0, 2.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(2.0, -2.0, 2.0)
+    glTexCoord2f(1.0, 0.35); glVertex3f(2.0, 0.7, 2.0)
+    glTexCoord2f(0.7, 0.35); glVertex3f(0.75, 0.7, 2.0)
+    glEnd()
+
+    # Parte superior de la pared frontal
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.35); glVertex3f(-2.0, 0.7, 2.0)
+    glTexCoord2f(1.0, 0.35); glVertex3f(2.0, 0.7, 2.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(2.0, 2.0, 2.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-2.0, 2.0, 2.0)
+    glEnd()
+
+    # Desactivamos la textura para dibujar la puerta sin ella
+    glDisable(GL_TEXTURE_2D)
+
+    # PUERTA (rectángulo que cubre el hueco)
+    glColor3f(1.0, 1.0, 1.0)  # Color blanco
+    glBegin(GL_QUADS)
+    glVertex3f(-0.75, -2.0, 2.01)
+    glVertex3f(0.75, -2.0, 2.01)
+    glVertex3f(0.75, 0.7, 2.01)
+    glVertex3f(-0.75, 0.7, 2.01)
+    glEnd()
+
+
+
 
 # Función para configurar la vista y proyección 3D
 def configurar_vision():
     # Definir la proyección en 3D (cámara ortogonal)
     glMatrixMode(GL_PROJECTION)  # Establecer modo de proyección
     glLoadIdentity()  # Limpiar la matriz de proyección
-    gluPerspective(45, 1200/900, 0.1, 50.0)  # Ángulo de visión, aspecto, near, far
+    gluPerspective(60, 1200/900, 1.0, 100.0)
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
@@ -126,23 +172,23 @@ def configurar_vision():
 # Función principal del programa
 def main():
     ventana = inicializar_ventana()
-    configurar_vision()  # Configurar la visión para 3D
+    configurar_vision()  #Configurar la visión para 3D
 
-    # Bucle principal
+    #Bucle principal
     while not glfw.window_should_close(ventana):
         #Establecemos los colores del fondo gris oscuro
         glClearColor(0.1, 0.1, 0.1, 1.0)
-        # Limpiar tanto el buffer de color como el buffer de profundidad
+        #Limpiar tanto el buffer de color como el buffer de profundidad
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        crear_cuarto()  # Dibujar el cuarto
+        dibujar_cuarto()  #Dibujar el cuarto
         
         #Intercambiar buffers y procesar eventos
-        glfw.swap_buffers(ventana)  # Muestra lo que se ha dibujado
-        glfw.poll_events()  # Captura eventos del teclado, mouse, etc.
+        glfw.swap_buffers(ventana)  #Muestra lo que se ha dibujado
+        glfw.poll_events()  #Captura eventos del teclado, mouse, etc.
 
     glfw.terminate()
 
-# Punto de entrada
+#Punto de entrada
 if __name__ == "__main__":
     main()
