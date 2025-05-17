@@ -14,11 +14,26 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
+import math
 
 
-# Función para inicializar la ventana con tamaño fijo
+#Variables globales para el movimiento de camara
+camera_pos = np.array([0.0, 1.6, 3.0], dtype=np.float32)  #Altura tipo "ojo humano"
+camera_front = np.array([0.0, 0.0, -1.0], dtype=np.float32)
+camera_up = np.array([0.0, 1.0, 0.0], dtype=np.float32)
+
+yaw = -90.0   #Ángulo horizontal
+pitch = 0.0   #Ángulo vertical
+lastX = 400   #Última posición del mouse (centro ventana)
+lastY = 300
+first_mouse = True
+speed = 0.01
+sensitivity = 0.1
+
+
+#Función para inicializar la ventana con tamaño fijo
 def inicializar_ventana(titulo="Proyecto OpenGL Paso 1"):
-    ancho, alto = 1200, 900  # Tamaño fijo
+    ancho, alto = 1200, 900  #Tamaño fijo
     if not glfw.init():
         raise Exception("No se pudo inicializar GLFW")
 
@@ -30,25 +45,30 @@ def inicializar_ventana(titulo="Proyecto OpenGL Paso 1"):
 
     #Establecer el contexto de OpenGL en la ventana actual
     glfw.make_context_current(ventana)
-    glEnable(GL_DEPTH_TEST)  # Habilitar la prueba de profundidad
+    glEnable(GL_DEPTH_TEST)  #Habilitar la prueba de profundidad
+    
+    #Activar el callback del mouse y deshabilitar el cursor
+    glfw.set_cursor_pos_callback(ventana, mouse_callback)
+    glfw.set_input_mode(ventana, glfw.CURSOR, glfw.CURSOR_DISABLED)
+
     
     return ventana
 
 #FUncion para poder ver la textura
 def cargar_textura(ruta):
-    # Abrir imagen
+    #Abrir imagen
     imagen = Image.open(ruta)
-    imagen = imagen.transpose(Image.FLIP_TOP_BOTTOM)  # Voltear la imagen para OpenGL
+    imagen = imagen.transpose(Image.FLIP_TOP_BOTTOM)  #Voltear la imagen para OpenGL
 
-    # Convertir la imagen a un formato adecuado para OpenGL
+    #Convertir la imagen a un formato adecuado para OpenGL
     ancho, alto = imagen.size
     imagen_data = imagen.tobytes("raw", "RGB", 0, -1)
 
-    # Crear y activar la textura
+    #Crear y activar la textura
     textura = glGenTextures(1)
     glBindTexture(GL_TEXTURE_2D, textura)
 
-    # Configuración de la textura
+    #Configuración de la textura
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ancho, alto, 0, GL_RGB, GL_UNSIGNED_BYTE, imagen_data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
@@ -57,11 +77,60 @@ def cargar_textura(ruta):
 
     return textura
 
+#Funcion para poder procesar las entradas atravez del teclado
+def process_input(window):
+    global camera_pos
+
+    camera_speed = speed
+    direction = np.cross(camera_front, camera_up)
+
+    if glfw.get_key(window, glfw.KEY_W) == glfw.PRESS:
+        camera_pos[:] += camera_speed * camera_front
+    if glfw.get_key(window, glfw.KEY_S) == glfw.PRESS:
+        camera_pos[:] -= camera_speed * camera_front
+    if glfw.get_key(window, glfw.KEY_A) == glfw.PRESS:
+        camera_pos[:] -= camera_speed * direction
+    if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
+        camera_pos[:] += camera_speed * direction
+    if glfw.get_key(window, glfw.KEY_LEFT_CONTROL) == glfw.PRESS:
+        camera_pos[:] -= camera_speed * camera_up
+    if glfw.get_key(window, glfw.KEY_SPACE) == glfw.PRESS:
+        camera_pos[:] += camera_speed * camera_up
+
+
+def mouse_callback(window, xpos, ypos):
+    global yaw, pitch, lastX, lastY, first_mouse, camera_front
+
+    if first_mouse:
+        lastX = xpos
+        lastY = ypos
+        first_mouse = False
+
+    xoffset = xpos - lastX
+    yoffset = lastY - ypos
+    lastX = xpos
+    lastY = ypos
+
+    xoffset *= sensitivity
+    yoffset *= sensitivity
+
+    yaw += xoffset
+    pitch += yoffset
+
+    pitch = max(-89.0, min(89.0, pitch))
+
+    front = np.array([
+        math.cos(math.radians(yaw)) * math.cos(math.radians(pitch)),
+        math.sin(math.radians(pitch)),
+        math.sin(math.radians(yaw)) * math.cos(math.radians(pitch))
+    ], dtype=np.float32)
+    camera_front[:] = front / np.linalg.norm(front)
+
+
 # Función para crear un cubo (una pared, suelo o techo)
 def dibujar_cuarto():
     # Cargar la textura para el cuarto exterior
-    textura_pared = cargar_textura('C:/medical-room-repo/Medical-rom/wall_texture.jpg')
-    textura_techo = cargar_textura('C:/medical-room-repo/Medical-rom/roof_texture.jpg')
+    global textura_pared, textura_techo
     
     glColor3f(1.0, 1.0, 1.0)  # Importante: color blanco para no alterar la textura
     
@@ -152,8 +221,6 @@ def dibujar_cuarto():
     glEnd()
 
 
-
-
 # Función para configurar la vista y proyección 3D
 def configurar_vision():
     # Definir la proyección en 3D (cámara ortogonal)
@@ -164,23 +231,27 @@ def configurar_vision():
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    # Cámara desde arriba y en diagonal (x=5, y=5, z=5), mirando al origen (0,0,0)
-    gluLookAt(5, 5, 5,    # Posición de la cámara
-              0, 0, 0,    # Punto al que mira la cámara
-              0, 1, 0)    # Vector 'arriba'
+    center = camera_pos + camera_front
+    gluLookAt(*camera_pos, *center, *camera_up)
+
 
 # Función principal del programa
 def main():
     ventana = inicializar_ventana()
-    configurar_vision()  #Configurar la visión para 3D
 
+    global textura_pared, textura_techo
+    
+    textura_pared = cargar_textura('C:/medical-room-repo/Medical-rom/wall_texture.jpg')
+    textura_techo = cargar_textura('C:/medical-room-repo/Medical-rom/roof_texture.jpg')
+    
     #Bucle principal
     while not glfw.window_should_close(ventana):
-        #Establecemos los colores del fondo gris oscuro
-        glClearColor(0.1, 0.1, 0.1, 1.0)
+        
         #Limpiar tanto el buffer de color como el buffer de profundidad
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+        configurar_vision()  #Configurar la visión para 3D
+        process_input(ventana)
         dibujar_cuarto()  #Dibujar el cuarto
         
         #Intercambiar buffers y procesar eventos
