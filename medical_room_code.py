@@ -18,7 +18,7 @@ import math
 
 
 #Variables globales para el movimiento de camara
-camera_pos = np.array([0.0, 1.6, 3.0], dtype=np.float32)  #Altura tipo "ojo humano"
+camera_pos = np.array([0.0, 1.6, 8.0], dtype=np.float32) #Altura tipo "ojo humano"
 camera_front = np.array([0.0, 0.0, -1.0], dtype=np.float32)
 camera_up = np.array([0.0, 1.0, 0.0], dtype=np.float32)
 
@@ -128,98 +128,97 @@ def mouse_callback(window, xpos, ypos):
 
 
 # Función para crear un cubo (una pared, suelo o techo)
+# Variables globales para el movimiento de cámara (ajustadas)
+camera_pos = np.array([0.0, 1.6, 5.0], dtype=np.float32)  # Z cambiado de 8.0 a 5.0
+camera_front = np.array([0.0, 0.0, -1.0], dtype=np.float32)
+camera_up = np.array([0.0, 1.0, 0.0], dtype=np.float32)
+
+# ... (el resto de funciones permanecen igual hasta dibujar_cuarto)
+
 def dibujar_cuarto():
-    # Cargar la textura para el cuarto exterior
-    global textura_pared, textura_techo
-    
-    glColor3f(1.0, 1.0, 1.0)  # Importante: color blanco para no alterar la textura
-    
     glEnable(GL_TEXTURE_2D)
-    
-    #Carga la textura de las paredes
+
+    # --- Techo (profundidad reducida: Z de -4.5 a 6.0) ---
     glBindTexture(GL_TEXTURE_2D, textura_techo)
-    
-    # --- TECHO ---
     glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(-2.0, 2.0, -2.0)
-    glTexCoord2f(1.0, 0.0); glVertex3f(2.0, 2.0, -2.0)
-    glTexCoord2f(1.0, 1.0); glVertex3f(2.0, 2.0, 2.2)
-    glTexCoord2f(0.0, 1.0); glVertex3f(-2.0, 2.0, 2.2)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-3.5, 3.0, -4.5)  # Z cambiado de -5.5 a -4.5
+    glTexCoord2f(1.0, 0.0); glVertex3f(3.5, 3.0, -4.5)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(3.5, 3.0, 6.0)    # Z cambiado de 7.0 a 6.0
+    glTexCoord2f(0.0, 1.0); glVertex3f(-3.5, 3.0, 6.0)   
     glEnd()
     
-    #Carga la textura de las paredes
+    # --- Pared trasera (Z = -4.5) ---
     glBindTexture(GL_TEXTURE_2D, textura_pared)
-
-    # --- PARED TRASERA ---
     glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(-2.0, -2.0, -2.0)
-    glTexCoord2f(1.0, 0.0); glVertex3f(2.0, -2.0, -2.0)
-    glTexCoord2f(1.0, 1.0); glVertex3f(2.0, 2.0, -2.0)
-    glTexCoord2f(0.0, 1.0); glVertex3f(-2.0, 2.0, -2.0)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-3.5, -2.0, -4.5)  # Z cambiado de -5.5 a -4.5
+    glTexCoord2f(1.0, 0.0); glVertex3f(3.5, -2.0, -4.5)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(3.5, 3.0, -4.5)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(-3.5, 3.0, -4.5)   
     glEnd()
 
-    # --- PARED IZQUIERDA ---
+    # --- Pared izquierda (Z de -4.5 a 6.0) ---
     glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(-2.0, -2.0, -2.0)
-    glTexCoord2f(1.0, 0.0); glVertex3f(-2.0, -2.0, 2.0)
-    glTexCoord2f(1.0, 1.0); glVertex3f(-2.0, 2.0, 2.0)
-    glTexCoord2f(0.0, 1.0); glVertex3f(-2.0, 2.0, -2.0)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-3.5, -2.0, -4.5)  
+    glTexCoord2f(1.0, 0.0); glVertex3f(-3.5, -2.0, 6.0)   # Z cambiado de 7.0 a 6.0
+    glTexCoord2f(1.0, 1.0); glVertex3f(-3.5, 3.0, 6.0)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(-3.5, 3.0, -4.5)   
     glEnd()
 
-    # --- PARED DERECHA ---
+    # --- Pared derecha (Z de -4.5 a 6.0) ---
     glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(2.0, -2.0, -2.0)
-    glTexCoord2f(1.0, 0.0); glVertex3f(2.0, -2.0, 2.0)
-    glTexCoord2f(1.0, 1.0); glVertex3f(2.0, 2.0, 2.0)
-    glTexCoord2f(0.0, 1.0); glVertex3f(2.0, 2.0, -2.0)
+    glTexCoord2f(0.0, 0.0); glVertex3f(3.5, -2.0, -4.5)   
+    glTexCoord2f(1.0, 0.0); glVertex3f(3.5, -2.0, 6.0)    
+    glTexCoord2f(1.0, 1.0); glVertex3f(3.5, 3.0, 6.0)     
+    glTexCoord2f(0.0, 1.0); glVertex3f(3.5, 3.0, -4.5)    
     glEnd()
 
-    # --- SUELO ---
+    # --- Suelo (Z de -4.5 a 6.0) ---
     glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(-2.0, -2.0, -2.0)
-    glTexCoord2f(1.0, 0.0); glVertex3f(2.0, -2.0, -2.0)
-    glTexCoord2f(1.0, 1.0); glVertex3f(2.0, -2.0, 2.0)
-    glTexCoord2f(0.0, 1.0); glVertex3f(-2.0, -2.0, 2.0)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-3.5, -2.0, -4.5)  
+    glTexCoord2f(1.0, 0.0); glVertex3f(3.5, -2.0, -4.5)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(3.5, -2.0, 6.0)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(-3.5, -2.0, 6.0)   
     glEnd()
 
-    # --- PARED FRONTAL CON HUECO (puerta sin textura) ---
-
-    # Parte izquierda de la pared frontal
+    # --- Pared frontal con puerta (Z = 6.0) ---
+       # --- Pared frontal con puerta (Z = 6.0) ---
+    # Parte izquierda
     glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(-2.0, -2.0, 2.0)
-    glTexCoord2f(0.3, 0.0); glVertex3f(-0.75, -2.0, 2.0)
-    glTexCoord2f(0.3, 0.35); glVertex3f(-0.75, 0.7, 2.0)
-    glTexCoord2f(0.0, 0.35); glVertex3f(-2.0, 0.7, 2.0)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-3.5, -2.0, 6.0)
+    glTexCoord2f(0.2, 0.0); glVertex3f(-0.8, -2.0, 6.0)   # Ancho aumentado de -0.6 a -0.8
+    glTexCoord2f(0.2, 0.4); glVertex3f(-0.8, 1.0, 6.0)    # Mantenemos altura en 1.0
+    glTexCoord2f(0.0, 0.4); glVertex3f(-3.5, 1.0, 6.0)
     glEnd()
 
-    # Parte derecha de la pared frontal
+    # Parte derecha
     glBegin(GL_QUADS)
-    glTexCoord2f(0.7, 0.0); glVertex3f(0.75, -2.0, 2.0)
-    glTexCoord2f(1.0, 0.0); glVertex3f(2.0, -2.0, 2.0)
-    glTexCoord2f(1.0, 0.35); glVertex3f(2.0, 0.7, 2.0)
-    glTexCoord2f(0.7, 0.35); glVertex3f(0.75, 0.7, 2.0)
+    glTexCoord2f(0.8, 0.0); glVertex3f(0.8, -2.0, 6.0)    # Ancho aumentado de 0.6 a 0.8
+    glTexCoord2f(1.0, 0.0); glVertex3f(3.5, -2.0, 6.0)
+    glTexCoord2f(1.0, 0.4); glVertex3f(3.5, 1.0, 6.0)
+    glTexCoord2f(0.8, 0.4); glVertex3f(0.8, 1.0, 6.0)
     glEnd()
 
-    # Parte superior de la pared frontal
+    # Parte superior (sin cambios)
     glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.35); glVertex3f(-2.0, 0.7, 2.0)
-    glTexCoord2f(1.0, 0.35); glVertex3f(2.0, 0.7, 2.0)
-    glTexCoord2f(1.0, 1.0); glVertex3f(2.0, 2.0, 2.0)
-    glTexCoord2f(0.0, 1.0); glVertex3f(-2.0, 2.0, 2.0)
+    glTexCoord2f(0.0, 0.4); glVertex3f(-3.5, 1.0, 6.0)
+    glTexCoord2f(1.0, 0.4); glVertex3f(3.5, 1.0, 6.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(3.5, 3.0, 6.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-3.5, 3.0, 6.0)
     glEnd()
 
-    # Desactivamos la textura para dibujar la puerta sin ella
     glDisable(GL_TEXTURE_2D)
 
-    # PUERTA (rectángulo que cubre el hueco)
-    glColor3f(1.0, 1.0, 1.0)  # Color blanco
+    # --- Puerta (Z = 6.01) ---
+    glColor3f(1.0, 1.0, 1.0)
     glBegin(GL_QUADS)
-    glVertex3f(-0.75, -2.0, 2.01)
-    glVertex3f(0.75, -2.0, 2.01)
-    glVertex3f(0.75, 0.7, 2.01)
-    glVertex3f(-0.75, 0.7, 2.01)
+    glVertex3f(-0.8, -2.0, 6.01)   # Ancho aumentado de -0.6 a -0.8
+    glVertex3f(0.8, -2.0, 6.01)    # Ancho aumentado de 0.6 a 0.8
+    glVertex3f(0.8, 1.0, 6.01)     # Altura se mantiene en 1.0
+    glVertex3f(-0.8, 1.0, 6.01)
     glEnd()
 
+
+    glDisable(GL_TEXTURE_2D)
 
 # Función para configurar la vista y proyección 3D
 def configurar_vision():
@@ -241,8 +240,8 @@ def main():
 
     global textura_pared, textura_techo
     
-    textura_pared = cargar_textura('C:/medical-room-repo/Medical-rom/wall_texture.jpg')
-    textura_techo = cargar_textura('C:/medical-room-repo/Medical-rom/roof_texture.jpg')
+    textura_pared = cargar_textura('C:/medical-room-repo/Medical-rom/wallw.png')
+    textura_techo = cargar_textura('C:/medical-room-repo/Medical-rom/TechoPng.png')
     
     #Bucle principal
     while not glfw.window_should_close(ventana):
