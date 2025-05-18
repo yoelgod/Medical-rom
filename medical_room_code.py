@@ -27,8 +27,8 @@ pitch = 0.0   #Ángulo vertical
 lastX = 400   #Última posición del mouse (centro ventana)
 lastY = 300
 first_mouse = True
-speed = 0.01
-sensitivity = 0.1
+speed = 0.025
+sensitivity = 0.15
 
 
 #Función para inicializar la ventana con tamaño fijo
@@ -126,14 +126,6 @@ def mouse_callback(window, xpos, ypos):
     ], dtype=np.float32)
     camera_front[:] = front / np.linalg.norm(front)
 
-
-# Función para crear un cubo (una pared, suelo o techo)
-# Variables globales para el movimiento de cámara (ajustadas)
-camera_pos = np.array([0.0, 1.6, 5.0], dtype=np.float32)  # Z cambiado de 8.0 a 5.0
-camera_front = np.array([0.0, 0.0, -1.0], dtype=np.float32)
-camera_up = np.array([0.0, 1.0, 0.0], dtype=np.float32)
-
-# ... (el resto de funciones permanecen igual hasta dibujar_cuarto)
 
 def dibujar_cuarto():
     glEnable(GL_TEXTURE_2D)
@@ -240,8 +232,8 @@ def main():
 
     global textura_pared, textura_techo
     
-    textura_pared = cargar_textura('C:/medical-room-repo/Medical-rom/wallw.png')
-    textura_techo = cargar_textura('C:/medical-room-repo/Medical-rom/TechoPng.png')
+    textura_pared = cargar_textura('C:/medical-room-repo/Medical-rom/wall_texture.jpg')
+    textura_techo = cargar_textura('C:/medical-room-repo/Medical-rom/roof_texture.jpg')
     
     #Bucle principal
     while not glfw.window_should_close(ventana):
