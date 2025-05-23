@@ -9,18 +9,18 @@ import numpy as np
 from OpenGL.GLU import gluPerspective  # Para la proyección de perspectiva
 from OpenGL.GL import glLoadIdentity  # Para manejar las matrices de vista
 from OpenGL.GLU import gluLookAt
-from PIL import Image
+from PIL import Image, ImageOps
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import math
 
-
 #Variables globales para el movimiento de camara
 camera_pos = np.array([0.0, 1.6, 8.0], dtype=np.float32) #Altura tipo "ojo humano"
 camera_front = np.array([0.0, 0.0, -1.0], dtype=np.float32)
 camera_up = np.array([0.0, 1.0, 0.0], dtype=np.float32)
+camera_pos = np.array([0.0, 1.6, 8.0], dtype=np.float32)
 
 yaw = -90.0   #Ángulo horizontal
 pitch = 0.0   #Ángulo vertical
@@ -30,6 +30,34 @@ first_mouse = True
 speed = 0.025
 sensitivity = 0.15
 
+limites = {
+    "min_x": -15.5,
+    "max_x": 15.5,
+    "min_z": -15.8,
+    "max_z": 15.2,
+    "min_y": 0.0,  
+    "max_y": 3.0 
+}
+
+#Funcion para validar colisiones mediante coordenadas
+def actualizar_posicion_con_colision(nueva_pos, limites):
+   # Limites en X, Y y Z
+    if nueva_pos[0] < limites["min_x"]:
+        nueva_pos[0] = limites["min_x"]
+    elif nueva_pos[0] > limites["max_x"]:
+        nueva_pos[0] = limites["max_x"]
+            
+    if nueva_pos[2] < limites["min_z"]:
+        nueva_pos[2] = limites["min_z"]
+    elif nueva_pos[2] > limites["max_z"]:
+        nueva_pos[2] = limites["max_z"]
+            
+    if nueva_pos[1] < limites["min_y"]:
+        nueva_pos[1] = limites["min_y"]
+    elif nueva_pos[1] > limites["max_y"]:
+        nueva_pos[1] = limites["max_y"]
+        
+    return nueva_pos
 
 #Función para inicializar la ventana con tamaño fijo
 def inicializar_ventana(titulo="Proyecto OpenGL Paso 1"):
@@ -85,17 +113,24 @@ def process_input(window):
     direction = np.cross(camera_front, camera_up)
 
     if glfw.get_key(window, glfw.KEY_W) == glfw.PRESS:
-        camera_pos[:] += camera_speed * camera_front
+        nueva_pos = camera_pos + camera_speed * camera_front
+        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
     if glfw.get_key(window, glfw.KEY_S) == glfw.PRESS:
-        camera_pos[:] -= camera_speed * camera_front
+        nueva_pos = camera_pos - camera_speed * camera_front
+        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
     if glfw.get_key(window, glfw.KEY_A) == glfw.PRESS:
-        camera_pos[:] -= camera_speed * direction
+        nueva_pos = camera_pos - camera_speed * direction
+        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
     if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
-        camera_pos[:] += camera_speed * direction
+        nueva_pos = camera_pos + camera_speed * direction
+        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
     if glfw.get_key(window, glfw.KEY_LEFT_CONTROL) == glfw.PRESS:
-        camera_pos[:] -= camera_speed * camera_up
+        nueva_pos = camera_pos - camera_speed * camera_up
+        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
     if glfw.get_key(window, glfw.KEY_SPACE) == glfw.PRESS:
-        camera_pos[:] += camera_speed * camera_up
+        nueva_pos = camera_pos + camera_speed * camera_up
+        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
+
 
 
 def mouse_callback(window, xpos, ypos):
@@ -129,6 +164,15 @@ def mouse_callback(window, xpos, ypos):
 
 def dibujar_cuarto():
     glEnable(GL_TEXTURE_2D)
+    
+    # --- Suelo (Z de -4.5 a 6.0) ---
+    glBindTexture(GL_TEXTURE_2D, textura_suelo)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-3.5, -2.0, -4.5)  
+    glTexCoord2f(1.0, 0.0); glVertex3f(3.5, -2.0, -4.5)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(3.5, -2.0, 6.0)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(-3.5, -2.0, 6.0)   
+    glEnd()
 
     # --- Techo (profundidad reducida: Z de -4.5 a 6.0) ---
     glBindTexture(GL_TEXTURE_2D, textura_techo)
@@ -162,14 +206,6 @@ def dibujar_cuarto():
     glTexCoord2f(1.0, 0.0); glVertex3f(3.5, -2.0, 6.0)    
     glTexCoord2f(1.0, 1.0); glVertex3f(3.5, 3.0, 6.0)     
     glTexCoord2f(0.0, 1.0); glVertex3f(3.5, 3.0, -4.5)    
-    glEnd()
-
-    # --- Suelo (Z de -4.5 a 6.0) ---
-    glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(-3.5, -2.0, -4.5)  
-    glTexCoord2f(1.0, 0.0); glVertex3f(3.5, -2.0, -4.5)   
-    glTexCoord2f(1.0, 1.0); glVertex3f(3.5, -2.0, 6.0)    
-    glTexCoord2f(0.0, 1.0); glVertex3f(-3.5, -2.0, 6.0)   
     glEnd()
 
     # --- Pared frontal con puerta (Z = 6.0) ---
@@ -208,8 +244,77 @@ def dibujar_cuarto():
     glVertex3f(0.8, 1.0, 6.01)     # Altura se mantiene en 1.0
     glVertex3f(-0.8, 1.0, 6.01)
     glEnd()
-
-
+    
+    glDisable(GL_TEXTURE_2D)
+    
+    # --- Pasto exterior ---
+    # Parte izquierda
+    glEnable(GL_TEXTURE_2D)
+    
+    glBindTexture(GL_TEXTURE_2D, textura_pasto)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-15.5, -2.0, -4.5)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-3.5, -2.0, -4.5)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(-3.5, -2.0, 6.0)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(-15.5, -2.0, 6.0)
+    glEnd()
+    
+    # Parte derecha
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(3.5, -2.0, -4.5)  
+    glTexCoord2f(1.0, 0.0); glVertex3f(15.5, -2.0, -4.5)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(15.5, -2.0, 6.0)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(3.5, -2.0, 6.0)   
+    glEnd()
+    
+    # Partes del fondo (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(3.5, -2.0, -15.5)  
+    glTexCoord2f(1.0, 0.0); glVertex3f(15.5, -2.0, -15.5)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(15.5, -2.0, -4.5)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(3.5, -2.0, -4.5)
+    glEnd()
+    
+    # Partes del fondo (centro)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(3.5, -2.0, -15.5)  
+    glTexCoord2f(1.0, 0.0); glVertex3f(-3.5, -2.0, -15.5)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(-3.5, -2.0, -4.5)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(3.5, -2.0, -4.5)
+    glEnd()
+    
+    # Partes del fondo (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-15.5, -2.0, -15.5)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-3.5, -2.0, -15.5)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(-3.5, -2.0, -4.5)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(-15.5, -2.0, -4.5)
+    glEnd()
+    
+    # Partes del frente (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(3.5, -2.0, 6.0)  
+    glTexCoord2f(1.0, 0.0); glVertex3f(15.5, -2.0, 6.0)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(15.5, -2.0, 15.5)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(3.5, -2.0, 15.5)
+    glEnd()
+    
+    # Partes del frente (centro)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(3.5, -2.0, 6.0)  
+    glTexCoord2f(1.0, 0.0); glVertex3f(-3.5, -2.0, 6.0)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(-3.5, -2.0, 15.5)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(3.5, -2.0, 15.5)
+    glEnd()
+    
+    # Partes del frente (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-15.5, -2.0, 6.0)  
+    glTexCoord2f(1.0, 0.0); glVertex3f(-3.5, -2.0, 6.0)   
+    glTexCoord2f(1.0, 1.0); glVertex3f(-3.5, -2.0, 15.5)    
+    glTexCoord2f(0.0, 1.0); glVertex3f(-15.5, -2.0, 15.5)
+    glEnd()
+    
     glDisable(GL_TEXTURE_2D)
 
 # Función para configurar la vista y proyección 3D
@@ -230,10 +335,12 @@ def configurar_vision():
 def main():
     ventana = inicializar_ventana()
 
-    global textura_pared, textura_techo
+    global textura_pared, textura_techo, textura_suelo, textura_pasto
     
-    textura_pared = cargar_textura('C:/medical-room-repo/Medical-rom/wall_texture.jpg')
-    textura_techo = cargar_textura('C:/medical-room-repo/Medical-rom/roof_texture.jpg')
+    textura_pared = cargar_textura('C:\medical-room-rep\Medical-rom/wall_texture.jpg')
+    textura_techo = cargar_textura('C:\medical-room-rep\Medical-rom/roof_texture.jpg')
+    textura_suelo = cargar_textura('C:\medical-room-rep\Medical-rom/floor_texture.jpg')
+    textura_pasto = cargar_textura('C:\medical-room-rep\Medical-rom/garden_texture.jpg')
     
     #Bucle principal
     while not glfw.window_should_close(ventana):
