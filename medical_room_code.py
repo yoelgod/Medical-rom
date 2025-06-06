@@ -11,6 +11,7 @@ from PIL import Image, ImageOps
 import math
 import time
 import pygame
+
 # Variables globales para física de movimiento
 is_jumping = False
 is_crouching = False
@@ -73,22 +74,32 @@ def inicializar_ventana(titulo="Proyecto OpenGL Paso 1"):
 
 #Funcion para validar colisiones mediante coordenadas
 def actualizar_posicion_con_colision(nueva_pos, limites):
-   # Limites en X, Y y Z
+    colision = False
+    colision_piso = False # Colisión con el piso
     if nueva_pos[0] < limites["min_x"]:
         nueva_pos[0] = limites["min_x"]
+        colision = True
     elif nueva_pos[0] > limites["max_x"]:
         nueva_pos[0] = limites["max_x"]
-            
+        colision = True
+
     if nueva_pos[2] < limites["min_z"]:
         nueva_pos[2] = limites["min_z"]
+        colision = True
     elif nueva_pos[2] > limites["max_z"]:
         nueva_pos[2] = limites["max_z"]
-            
+        colision = True
+
     if nueva_pos[1] < limites["min_y"]:
         nueva_pos[1] = limites["min_y"]
+        colision = True
+        colision_piso = True # Colisión con el piso
     elif nueva_pos[1] > limites["max_y"]:
         nueva_pos[1] = limites["max_y"]
-        
+        colision = True
+
+    if colision and not colision_piso: # Si hay colisión pero no con el piso, reproducir sonido
+        reproducir_efecto_sonido('C:\\medical-room-rep\\Medical-rom\\hit1.mp3')
     return nueva_pos
 
 #Funcion para poder procesar las entradas atravez del teclado
@@ -423,6 +434,92 @@ def dibujar_cuarto():
 
     # Dibujar la puerta (ahora con animación)
     dibujar_puerta()
+    
+def dibujar_arbol():
+    # --- Arbol ---
+    # Parte frontal
+    glColor3f(0.5, 0.35, 0.05)  # Marron
+    glBegin(GL_QUADS)
+    glVertex3f(-10.0, 5.0, -10.5)
+    glVertex3f(-12.0, 5.0, -10.5)
+    glVertex3f(-12.0, -2.5, -10.5)
+    glVertex3f(-10.0, -2.5, -10.5)
+    glEnd()
+    
+    # Parte trasera
+    glBegin(GL_QUADS)
+    glVertex3f(-10, 5.0, -12.5)
+    glVertex3f(-12.0, 5.0, -12.5)
+    glVertex3f(-12.0, -2.5, -12.5)
+    glVertex3f(-10.0, -2.5, -12.5)
+    glEnd()
+    
+    # Parte izquierda
+    glBegin(GL_QUADS)
+    glVertex3f(-12.0, 5.0, -10.5)
+    glVertex3f(-12.0, 5.0, -12.5)
+    glVertex3f(-12.0, -2.5, -12.5)
+    glVertex3f(-12.0, -2.5, -10.5)
+    glEnd()
+    
+    # Parte derecha
+    glBegin(GL_QUADS)
+    glVertex3f(-10.0, 5.0, -10.5)
+    glVertex3f(-10.0, 5.0, -12.5)
+    glVertex3f(-10.0, -2.5, -12.5)
+    glVertex3f(-10.0, -2.5, -10.5)
+    glEnd()
+
+    # --- Ojas ---
+    # Parte frontal
+    glColor3f(0.0, 0.6, 0.0)  # Verde
+    glBegin(GL_QUADS)
+    glVertex3f(-9.0, 7.0, -10.0)
+    glVertex3f(-13.0, 7.0, -10.0)
+    glVertex3f(-13.0, 4.5, -10.0)
+    glVertex3f(-9.0, 4.5, -10.0)
+    glEnd()
+    
+    # Parte trasera
+    glBegin(GL_QUADS)
+    glVertex3f(-9.0, 7.0, -13.0)
+    glVertex3f(-13.0, 7.0, -13.0)
+    glVertex3f(-13.0, 4.5, -13.0)
+    glVertex3f(-9.0, 4.5, -13.0)
+    glEnd()
+    
+    # Parte izquierda
+    glBegin(GL_QUADS)
+    glVertex3f(-13.0, 7.0, -10.0)
+    glVertex3f(-13.0, 7.0, -13.0)
+    glVertex3f(-13.0, 4.5, -13.0)
+    glVertex3f(-13.0, 4.5, -10.0)
+    glEnd()
+    
+    # Parte derecha
+    glBegin(GL_QUADS)
+    glVertex3f(-9.0, 7.0, -10.0)
+    glVertex3f(-9.0, 7.0, -13.0)
+    glVertex3f(-9.0, 4.5, -13.0)
+    glVertex3f(-9.0, 4.5, -10.0)
+    glEnd()
+    
+
+    glColor3f(1.0, 1.0, 1.0)  # Restaurar color blanco
+    
+# Función para inicializar el sonido
+def inicializar_sonido(ruta_sonido):
+    pygame.mixer.init()
+    pygame.mixer.music.load(ruta_sonido)
+    pygame.mixer.music.set_volume(0.5)  # Volumen (0.0 a 1.0)
+
+def reproducir_sonido_ambiente(loop=True):
+    pygame.mixer.music.play(-1 if loop else 0)
+    
+def reproducir_efecto_sonido(ruta_sonido):
+    efecto = pygame.mixer.Sound(ruta_sonido)
+    efecto.set_volume(0.5)
+    efecto.play()
 
 # Función para configurar la vista y proyección 3D
 def configurar_vision():
@@ -454,6 +551,10 @@ def main():
     textura_pasto = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\garden_texture.jpg')
     textura_puerta = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\door_texture.jpg')
     
+    # Inicializar sonido
+    inicializar_sonido('C:\medical-room-rep\Medical-rom/Minecraft.mp3')
+    reproducir_sonido_ambiente(loop=True)
+    
     #Bucle principal
     while not glfw.window_should_close(ventana):
         
@@ -465,7 +566,7 @@ def main():
         process_input(ventana)
         dibujar_cuarto()  #Dibujar el cuarto
         dibujar_pasto() #Dibuja el pasto del cuadro
-        
+        dibujar_arbol()  #Dibujar el árbol
 
         
         #Intercambiar buffers y procesar eventos
