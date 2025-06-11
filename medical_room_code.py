@@ -47,7 +47,16 @@ limites = {
     "min_z": -15.8,
     "max_z": 15.2,
     "min_y": 0.0,  
-    "max_y": 15.0 
+    "max_y": 15.0
+}
+
+limites_arbol_derecho = {
+    "min_x_d": 10.0,
+    "max_x_d": 12.0,
+    "min_z_d": -2.2,
+    "max_z_d":  5.0,
+    "min_y_d": -10.5,  
+    "max_y_d": -12.5
 }
 
 #Función para inicializar la ventana con tamaño fijo
@@ -97,6 +106,14 @@ def actualizar_posicion_con_colision(nueva_pos, limites):
     elif nueva_pos[1] > limites["max_y"]:
         nueva_pos[1] = limites["max_y"]
         colision = True
+        
+    # Colisiones con el árbol derecho
+    if (8.7 <= nueva_pos[0] <= 13.3) and (-13.3 <= nueva_pos[2] <= -8.7):
+        return camera_pos.copy()
+    
+    # Colisiones con el árbol izquierdo
+    if (-13.3 <= nueva_pos[0] <= -8.7) and (-13.3 <= nueva_pos[2] <= -8.7):
+        return camera_pos.copy()
 
     if colision and not colision_piso: # Si hay colisión pero no con el piso, reproducir sonido
         reproducir_efecto_sonido('C:\\medical-room-rep\\Medical-rom\\hit1.mp3')
@@ -239,7 +256,7 @@ def dibujar_pasto():
     # --- Pasto exterior ---
     # Parte izquierda
     glEnable(GL_TEXTURE_2D)
-    
+
     glBindTexture(GL_TEXTURE_2D, textura_pasto)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(-15.5, -2.0, -4.5)
@@ -435,77 +452,565 @@ def dibujar_cuarto():
     # Dibujar la puerta (ahora con animación)
     dibujar_puerta()
     
-def dibujar_arbol():
-    # --- Arbol ---
-    # Parte frontal
-    glColor3f(0.5, 0.35, 0.05)  # Marron
+def dibujar_hojas_izquierdo():
+    # --- Hojas ---
+    # Parte frontal (abajo)
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, textura_hojas)
+    
+    # Parte frontal (abajo)
     glBegin(GL_QUADS)
-    glVertex3f(-10.0, 5.0, -10.5)
-    glVertex3f(-12.0, 5.0, -10.5)
-    glVertex3f(-12.0, -2.5, -10.5)
-    glVertex3f(-10.0, -2.5, -10.5)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 4.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 4.5, -10.0)
     glEnd()
     
-    # Parte trasera
+    # Parte trasera (abajo)
     glBegin(GL_QUADS)
-    glVertex3f(-10, 5.0, -12.5)
-    glVertex3f(-12.0, 5.0, -12.5)
-    glVertex3f(-12.0, -2.5, -12.5)
-    glVertex3f(-10.0, -2.5, -12.5)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 4.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 4.5, -13.0)
     glEnd()
     
-    # Parte izquierda
+    # Parte izquierda (abajo)
     glBegin(GL_QUADS)
-    glVertex3f(-12.0, 5.0, -10.5)
-    glVertex3f(-12.0, 5.0, -12.5)
-    glVertex3f(-12.0, -2.5, -12.5)
-    glVertex3f(-12.0, -2.5, -10.5)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-13.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 4.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-13.0, 4.5, -10.0)
     glEnd()
     
-    # Parte derecha
+    # Parte derecha (abajo)
     glBegin(GL_QUADS)
-    glVertex3f(-10.0, 5.0, -10.5)
-    glVertex3f(-10.0, 5.0, -12.5)
-    glVertex3f(-10.0, -2.5, -12.5)
-    glVertex3f(-10.0, -2.5, -10.5)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-9.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-9.0, 4.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 4.5, -10.0)
+    glEnd()
+    
+    # Parte inferior (abajo)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 4.5, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 4.5, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 4.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 4.5, -13.0)
     glEnd()
 
-    # --- Ojas ---
-    # Parte frontal
-    glColor3f(0.0, 0.6, 0.0)  # Verde
+    # Parte frontal (arriba)
     glBegin(GL_QUADS)
-    glVertex3f(-9.0, 7.0, -10.0)
-    glVertex3f(-13.0, 7.0, -10.0)
-    glVertex3f(-13.0, 4.5, -10.0)
-    glVertex3f(-9.0, 4.5, -10.0)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 9.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 9.5, -10.0)
     glEnd()
     
-    # Parte trasera
+    # Parte trasera (arriba)
     glBegin(GL_QUADS)
-    glVertex3f(-9.0, 7.0, -13.0)
-    glVertex3f(-13.0, 7.0, -13.0)
-    glVertex3f(-13.0, 4.5, -13.0)
-    glVertex3f(-9.0, 4.5, -13.0)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 9.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 9.5, -13.0)
     glEnd()
     
-    # Parte izquierda
+    # Parte izquierda (arriba)
     glBegin(GL_QUADS)
-    glVertex3f(-13.0, 7.0, -10.0)
-    glVertex3f(-13.0, 7.0, -13.0)
-    glVertex3f(-13.0, 4.5, -13.0)
-    glVertex3f(-13.0, 4.5, -10.0)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-13.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 9.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-13.0, 9.5, -10.0)
     glEnd()
     
-    # Parte derecha
+    # Parte derecha (arriba)
     glBegin(GL_QUADS)
-    glVertex3f(-9.0, 7.0, -10.0)
-    glVertex3f(-9.0, 7.0, -13.0)
-    glVertex3f(-9.0, 4.5, -13.0)
-    glVertex3f(-9.0, 4.5, -10.0)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-9.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-9.0, 9.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 9.5, -10.0)
     glEnd()
     
+    # Parte frontal (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-15.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-15.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte trasera (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-15.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-15.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte izquierda (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-15.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-15.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-15.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-15.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte derecha (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-13.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-13.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte inferior (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-15.0, 5.5, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 5.5, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-15.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte frontal (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-7.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-9.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-9.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-7.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte trasera (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-7.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-9.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-9.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-7.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte izquierda (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-7.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-7.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-7.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-7.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte derecha (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-9.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-9.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte inferior (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-7.0, 5.5, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-9.0, 5.5, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-9.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-7.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte frontal (frontal)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 8.0, -8.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 8.0, -8.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -8.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 5.5, -8.0)
+    glEnd()
+    
+    # Parte trasera (frontal)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte izquierda (frontal)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-13.0, 8.0, -8.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-13.0, 5.5, -8.0)
+    glEnd()
+    
+    # Parte derecha (frontal)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 8.0, -8.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-9.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-9.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 5.5, -8.0)
+    glEnd()
+    
+    # Parte inferior (frontal)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 5.5, -8.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 5.5, -8.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte frontal (trasera)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte trasera (trasera)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 8.0, -15.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 8.0, -15.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -15.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 5.5, -15.0)
+    glEnd()
+    
+    # Parte izquierda (trasera)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-13.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 8.0, -15.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -15.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-13.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte derecha (trasera)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-9.0, 8.0, -15.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-9.0, 5.5, -15.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte inferior (trasera)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-9.0, 5.5, -15.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-13.0, 5.5, -15.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-13.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-9.0, 5.5, -13.0)
+    glEnd()
+    
+    glDisable(GL_TEXTURE_2D)
+    
+def dibujar_arbol_izquierdo():
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, textura_arbol)
+    
+    # --- Tronco del árbol ---
+    # Parte frontal 
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-10.0, 5.0, -10.5)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-12.0, 5.0, -10.5)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-12.0, -2.5, -10.5)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-10.0, -2.5, -10.5)
+    glEnd()
+    
+    # Parte trasera 
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-10.0, 5.0, -12.5)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-12.0, 5.0, -12.5)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-12.0, -2.5, -12.5)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-10.0, -2.5, -12.5)
+    glEnd()
+    
+    # Parte izquierda 
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-12.0, 5.0, -10.5)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-12.0, 5.0, -12.5)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-12.0, -2.5, -12.5)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-12.0, -2.5, -10.5)
+    glEnd()
+    
+    # Parte derecha 
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-10.0, 5.0, -10.5)
+    glTexCoord2f(1.0, 0.0); glVertex3f(-10.0, 5.0, -12.5)
+    glTexCoord2f(1.0, 1.0); glVertex3f(-10.0, -2.5, -12.5)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-10.0, -2.5, -10.5)
+    glEnd()
+    
+    glDisable(GL_TEXTURE_2D)
+    dibujar_hojas_izquierdo()  # Llamar a la función para dibujar las hojas del árbol
+    
+def dibujar_hojas_derecho():
+    # --- Hojas ---
+    # Parte frontal (abajo)
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, textura_hojas)
+    
+    # Parte frontal (abajo)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 4.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 4.5, -10.0)
+    glEnd()
+    
+    # Parte trasera (abajo)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 4.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 4.5, -13.0)
+    glEnd()
+    
+    # Parte izquierda (abajo)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(13.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 4.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(13.0, 4.5, -10.0)
+    glEnd()
+    
+    # Parte derecha (abajo)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(9.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(9.0, 4.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 4.5, -10.0)
+    glEnd()
+    
+    # Parte inferior (abajo)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 4.5, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 4.5, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 4.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 4.5, -13.0)
+    glEnd()
 
-    glColor3f(1.0, 1.0, 1.0)  # Restaurar color blanco
+    # Parte frontal (arriba)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 9.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 9.5, -10.0)
+    glEnd()
+    
+    # Parte trasera (arriba)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 9.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 9.5, -13.0)
+    glEnd()
+    
+    # Parte izquierda (arriba)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(13.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 9.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(13.0, 9.5, -10.0)
+    glEnd()
+    
+    # Parte derecha (arriba)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 7.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(9.0, 7.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(9.0, 9.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 9.5, -10.0)
+    glEnd()
+    
+    # Parte frontal (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(15.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(15.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte trasera (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(15.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(15.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte izquierda (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(15.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(15.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(15.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(15.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte derecha (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(13.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(13.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte inferior (izquierda)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(15.0, 5.5, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 5.5, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(15.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte frontal (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(7.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(9.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(9.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(7.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte trasera (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(7.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(9.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(9.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(7.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte izquierda (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(7.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(7.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(7.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(7.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte derecha (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(9.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(9.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte inferior (derecha)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(7.0, 5.5, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(9.0, 5.5, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(9.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(7.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte frontal (frontal)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -8.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -8.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -8.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -8.0)
+    glEnd()
+    
+    # Parte trasera (frontal)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte izquierda (frontal)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(13.0, 8.0, -8.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(13.0, 5.5, -8.0)
+    glEnd()
+    
+    # Parte derecha (frontal)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -8.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(9.0, 8.0, -10.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(9.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -8.0)
+    glEnd()
+    
+    # Parte inferior (frontal)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 5.5, -8.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 5.5, -8.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -10.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -10.0)
+    glEnd()
+    
+    # Parte frontal (trasera)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte trasera (trasera)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -15.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -15.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -15.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -15.0)
+    glEnd()
+    
+    # Parte izquierda (trasera)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(13.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -15.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -15.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(13.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte derecha (trasera)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -13.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(9.0, 8.0, -15.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(9.0, 5.5, -15.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -13.0)
+    glEnd()
+    
+    # Parte inferior (trasera)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 5.5, -15.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 5.5, -15.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f(13.0, 5.5, -13.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -13.0)
+    glEnd()
+    
+    glDisable(GL_TEXTURE_2D)
+    
+def dibujar_arbol_derecho():
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, textura_arbol)
+    
+    # --- Tronco del árbol ---
+    # Parte frontal 
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(10.0, 5.0, -10.5)
+    glTexCoord2f(1.0, 0.0); glVertex3f(12.0, 5.0, -10.5)
+    glTexCoord2f(1.0, 1.0); glVertex3f(12.0, -2.5, -10.5)
+    glTexCoord2f(0.0, 1.0); glVertex3f(10.0, -2.5, -10.5)
+    glEnd()
+    
+    # Parte trasera 
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(10.0, 5.0, -12.5)
+    glTexCoord2f(1.0, 0.0); glVertex3f(12.0, 5.0, -12.5)
+    glTexCoord2f(1.0, 1.0); glVertex3f(12.0, -2.5, -12.5)
+    glTexCoord2f(0.0, 1.0); glVertex3f(10.0, -2.5, -12.5)
+    glEnd()
+    
+    # Parte izquierda 
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(12.0, 5.0, -10.5)
+    glTexCoord2f(1.0, 0.0); glVertex3f(12.0, 5.0, -12.5)
+    glTexCoord2f(1.0, 1.0); glVertex3f(12.0, -2.5, -12.5)
+    glTexCoord2f(0.0, 1.0); glVertex3f(12.0, -2.5, -10.5)
+    glEnd()
+    
+    # Parte derecha 
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(10.0, 5.0, -10.5)
+    glTexCoord2f(1.0, 0.0); glVertex3f(10.0, 5.0, -12.5)
+    glTexCoord2f(1.0, 1.0); glVertex3f(10.0, -2.5, -12.5)
+    glTexCoord2f(0.0, 1.0); glVertex3f(10.0, -2.5, -10.5)
+    glEnd()
+    
+    glDisable(GL_TEXTURE_2D)
+    dibujar_hojas_derecho()  # Llamar a la función para dibujar las hojas del árbol
     
 # Función para inicializar el sonido
 def inicializar_sonido(ruta_sonido):
@@ -539,17 +1044,19 @@ def configurar_vision():
 def main():
     ventana = inicializar_ventana()
 
-    global textura_pared, textura_techo, textura_suelo, textura_pasto, textura_puerta, prev_time, accumulated_move
+    global textura_pared, textura_techo, textura_suelo, textura_pasto, textura_puerta, textura_arbol, textura_hojas, prev_time, accumulated_move
     
     prev_time = glfw.get_time()
     last_time = time.time()  # Inicializar tiempo para la puerta
     accumulated_move = np.array([0.0, 0.0, 0.0], dtype=np.float32)
     
-    textura_pared = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\wall_texture.jpg')
-    textura_techo = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\roof_texture.jpg')
-    textura_suelo = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\floor_texture.jpg')
-    textura_pasto = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\garden_texture.jpg')
-    textura_puerta = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\door_texture.jpg')
+    textura_pared = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\wall_texture.jpg')
+    textura_techo = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\roof_texture.jpg')
+    textura_suelo = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\floor_texture.jpg')
+    textura_pasto = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\garden_texture.jpg')
+    textura_puerta = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\door_texture.jpg')
+    textura_arbol = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\tree_texture.jpg')
+    textura_hojas = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\leaves_texture.jpg')
     
     # Inicializar sonido
     inicializar_sonido('C:\medical-room-rep\Medical-rom/Minecraft.mp3')
@@ -566,7 +1073,8 @@ def main():
         process_input(ventana)
         dibujar_cuarto()  #Dibujar el cuarto
         dibujar_pasto() #Dibuja el pasto del cuadro
-        dibujar_arbol()  #Dibujar el árbol
+        dibujar_arbol_izquierdo() #Dibujar el árbol en la parte izquierda
+        dibujar_arbol_derecho() #Dibujar el árbol en la parte derecha
 
         
         #Intercambiar buffers y procesar eventos
