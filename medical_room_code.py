@@ -875,7 +875,8 @@ def dibujar_cuarto():
     dibujar_puerta()
     
 def dibujar_escaleras():
-    glDisable(GL_TEXTURE_2D)
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, textura_Madera)
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, [1.0, 1.0, 1.0, 1.0])
     
     ancho_escalera = 1.5
