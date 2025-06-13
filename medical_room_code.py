@@ -1050,13 +1050,13 @@ def main():
     last_time = time.time()  # Inicializar tiempo para la puerta
     accumulated_move = np.array([0.0, 0.0, 0.0], dtype=np.float32)
     
-    textura_pared = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\wall_texture.jpg')
-    textura_techo = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\roof_texture.jpg')
-    textura_suelo = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\floor_texture.jpg')
-    textura_pasto = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\garden_texture.jpg')
-    textura_puerta = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\door_texture.jpg')
-    textura_arbol = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\tree_texture.jpg')
-    textura_hojas = cargar_textura('C:\\Medical-room-rep\\Medical-rom\\leaves_texture.jpg')
+    textura_pared = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\wall_texture.jpg')
+    textura_techo = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\roof_texture.jpg')
+    textura_suelo = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\floor_texture.jpg')
+    textura_pasto = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\garden_texture.jpg')
+    textura_puerta = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\door_texture.jpg')
+    textura_arbol = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\tree_texture.jpg')
+    textura_hojas = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\leaves_texture.jpg')
     
     # Inicializar sonido
     inicializar_sonido('C:\medical-room-rep\Medical-rom/Minecraft.mp3')
