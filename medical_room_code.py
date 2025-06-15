@@ -62,11 +62,6 @@ limites_arbol_derecho = {
     
 }
 
-def reaparecer():
-    global camera_pos, normal_height
-    camera_pos = np.array([0.0, normal_height, 12.0], dtype=np.float32)
-
-
 #Función para inicializar la ventana con tamaño fijo
 def inicializar_ventana(titulo="Proyecto OpenGL Paso 1"):
     ancho, alto = 1200, 900  #Tamaño fijo
@@ -93,55 +88,103 @@ def inicializar_ventana(titulo="Proyecto OpenGL Paso 1"):
 # Dejamos todo tu código de límites y árboles exactamente como lo tienes:
 
 def actualizar_posicion_con_colision(nueva_pos, limites):
-    global camera_pos
 
+    # -------------------------------
+    # CONFIGURACIÓN DE COLISIONES
+    # -------------------------------
     colision = False
+    
+    # --- Constantes ---
+    PARED_GROSOR = 1.0
+    SUELO_GROSOR = 0.5
+    TECHO_GROSOR = 0.3
+    MARGEN_CAIDA = 0.2
 
-    # Limites globales (por seguridad)
-    if nueva_pos[0] < limites["min_x"]:
-        nueva_pos[0] = limites["min_x"]
-        colision = True
-    elif nueva_pos[0] > limites["max_x"]:
-        nueva_pos[0] = limites["max_x"]
-        colision = True
+    # --- Alturas ---
+    PISO_1 = -2.0
+    PISO_2 = 3.0
+    TECHO_1 = 3.0
+    TECHO_2 = 8.0
 
-    if nueva_pos[2] < limites["min_z"]:
-        nueva_pos[2] = limites["min_z"]
-        colision = True
-    elif nueva_pos[2] > limites["max_z"]:
-        nueva_pos[2] = limites["max_z"]
-        colision = True
+    # --- Límites casa ---
+    X_MIN, X_MAX = -3.5, 3.5
+    Z_MIN, Z_MAX = -4.5, 6.0
 
-    # Colisión piso (respawn)
-    if nueva_pos[1] < limites["min_y"]:
-        reaparecer()
+    # --- Puertas ---
+    PUERTA_FRONTAL = (-0.8, 0.8)  # En Z=6.0
+    PUERTA_TRASERA = (-3.5, -2.5)  # En X=-3.5
+    PUERTA_SEGUNDO = (-2.5, -1.5)  # En Z=1.5
+
+    # ==============================================
+    # 1. SISTEMA DE PISOS/TECHOS (SIMPLIFICADO)
+    # ==============================================
+
+    # Suelo base (exterior)
+    if nueva_pos[1] < PISO_1 + SUELO_GROSOR:
+        nueva_pos[1] = PISO_1
+        return nueva_pos
+
+    # Suelo terraza (segundo piso)
+    if (X_MIN <= nueva_pos[0] <= X_MAX) and (1.5 < nueva_pos[2] <= Z_MAX):
+        if PISO_2 - SUELO_GROSOR <= nueva_pos[1] <= PISO_2 + SUELO_GROSOR:
+            nueva_pos[1] = PISO_2
+            return nueva_pos
+
+    # ==============================================
+    # 2. COLISIONES DE PAREDES (ACTUALIZADO)
+    # ==============================================
+
+    def hay_colision_pared(pos):
+        # Pared frontal (Z=6.0)
+        if (Z_MAX - PARED_GROSOR <= pos[2] <= Z_MAX + PARED_GROSOR):
+            if not (PUERTA_FRONTAL[0] <= pos[0] <= PUERTA_FRONTAL[1]):
+                return True
+        
+        # Pared izquierda (X=-3.5)
+        if (X_MIN - PARED_GROSOR <= pos[0] <= X_MIN + PARED_GROSOR):
+            if not (PUERTA_TRASERA[0] <= pos[2] <= PUERTA_TRASERA[1]):
+                return True
+        
+        # Pared derecha (X=3.5)
+        if (X_MAX - PARED_GROSOR <= pos[0] <= X_MAX + PARED_GROSOR):
+            return True
+        
+        # Pared trasera (Z=-4.5)
+        if (Z_MIN - PARED_GROSOR <= pos[2] <= Z_MIN + PARED_GROSOR):
+            return True
+        
+        # Pared segundo piso (Z=1.5)
+        if (1.5 - PARED_GROSOR <= pos[2] <= 1.5 + PARED_GROSOR):
+            if not (PUERTA_SEGUNDO[0] <= pos[0] <= PUERTA_SEGUNDO[1]):
+                return True
+        
+        return False
+
+    # Solo verificar colisiones si estamos dentro del área de la casa
+    if (X_MIN - 2.0 <= nueva_pos[0] <= X_MAX + 2.0) and (Z_MIN - 2.0 <= nueva_pos[2] <= Z_MAX + 2.0):
+        if hay_colision_pared(nueva_pos):
+            return camera_pos.copy()
+
+    # ==============================================
+    # 3. LIMITES DEL MUNDO (EVITAR CAÍDAS)
+    # ==============================================
+    
+    # Limitar altura máxima (evitar pantalla negra al saltar)
+    if nueva_pos[1] > TECHO_2 + 5.0:  # Margen adicional
+        nueva_pos[1] = TECHO_2 + 5.0
+        return nueva_pos
+
+    # Limitar coordenadas globales
+    if (nueva_pos[0] < limites["min_x"] or nueva_pos[0] > limites["max_x"] or
+        nueva_pos[2] < limites["min_z"] or nueva_pos[2] > limites["max_z"]):
         return camera_pos.copy()
 
-    if nueva_pos[1] > limites["max_y"]:
-        nueva_pos[1] = limites["max_y"]
-        colision = True
-
-    # Árboles (ya funcionando)
-    if (8.7 <= nueva_pos[0] <= 13.3) and (-13.3 <= nueva_pos[2] <= -8.7):
-        return camera_pos.copy()
-
-    if (-13.3 <= nueva_pos[0] <= -8.7) and (-13.3 <= nueva_pos[2] <= -8.7):
-        return camera_pos.copy()
-
-    # -------------------------------
-    # COLISIONES DE LA CASA (CUBO)
-    # -------------------------------
-
-    #
-    #
-    #
-    #
-    #
-
-    if colision:
+            
+    if colision: 
         reproducir_efecto_sonido('C:\\Medical-room-repo\\Medical-rom\\hit1.mp3')
-
     return nueva_pos
+     # Opcional: reproducir sonido de aterrizaj
+    
 
 
 
@@ -215,7 +258,7 @@ def process_input(window):
 
 #funcion para poder aplicar gravedad y no flotar    
 def aplicar_gravedad():
-    global camera_pos, vertical_velocity, is_jumping
+    global vertical_velocity, is_jumping
 
     # Solo aplica gravedad si está en el aire y NO agachado
     if (is_jumping or camera_pos[1] > normal_height) and not is_crouching:
@@ -406,6 +449,8 @@ def mouse_callback(window, xpos, ypos):
     camera_front[:] = front / np.linalg.norm(front)
 
 def dibujar_escaleras():
+    
+    
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, textura_Madera)
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, [1.0, 1.0, 1.0, 1.0])
@@ -454,15 +499,21 @@ def dibujar_escaleras():
     glVertex3f(x_sobresale, y_final, z_final_escaleras - plataforma_retroceso)
     glVertex3f(x_sobresale, y_final, z_final_escaleras)
     glEnd()
+    
+     # --- Lógica de movimiento ---
+  
+    
+    
+    
 
 
-def dibujar_esfera_skybox(cam_pos, textura_cielo):
+def dibujar_esfera_skybox(camera_pos, textura_cielo):
     glPushMatrix()
     glRotatef(90, 1, 0, 0)
 
     
     # Posicionar la esfera en la cámara para que parezca infinita
-    glTranslatef(cam_pos[0], cam_pos[1], cam_pos[2])
+    glTranslatef(camera_pos[0], camera_pos[1], camera_pos[2])
     
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, textura_cielo)
@@ -544,6 +595,14 @@ def dibujar_puerta():
     glDisable(GL_TEXTURE_2D)
 
 def dibujar_cuarto():
+    
+    glDepthMask(GL_TRUE)
+    glEnable(GL_LIGHTING)
+    glEnable(GL_LIGHT0)
+        
+    glLightfv(GL_LIGHT0, GL_AMBIENT, [0.4, 0.4, 0.4, 1.0])   # luz general más intensa
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, [1.0, 1.0, 1.0, 1.0])   # luz directa intensa
+    glLightfv(GL_LIGHT0, GL_POSITION, [0.0, 10.0, 0.0, 1.0]) # posición de la luz
   
     glEnable(GL_TEXTURE_2D)
     
@@ -555,7 +614,8 @@ def dibujar_cuarto():
     glTexCoord2f(1.0, 1.0); glVertex3f(3.5, -2.0, 6.0)    
     glTexCoord2f(0.0, 1.0); glVertex3f(-3.5, -2.0, 6.0)   
     glEnd()
-
+    
+    #Primer piso
     # --- Techo 
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(-3.5, 3.0, -4.5)  # Z cambiado de -5.5 a -4.5
@@ -616,94 +676,13 @@ def dibujar_cuarto():
     glTexCoord2f(0.0, 1.0); glVertex3f(-3.5, 3.0, 6.0)
     glEnd()
 
-    glDisable(GL_TEXTURE_2D)
-
-    # --- Puerta (Z = 6.01) ---
-    glColor3f(1.0, 1.0, 1.0)
-    glBegin(GL_QUADS)
-    glVertex3f(-0.8, -2.0, 6.01)   # Ancho aumentado de -0.6 a -0.8
-    glVertex3f(0.8, -2.0, 6.01)    # Ancho aumentado de 0.6 a 0.8
-    glVertex3f(0.8, 1.0, 6.01)     # Altura se mantiene en 1.0
-    glVertex3f(-0.8, 1.0, 6.01)
-    glEnd()
-    
-    glDisable(GL_TEXTURE_2D)
-    
-    
-    # --- Pasto exterior ---
-    # Parte izquierda
-    glEnable(GL_TEXTURE_2D)
-    
-    glBindTexture(GL_TEXTURE_2D, textura_pasto)
-    glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(-15.5, -2.0, -4.5)
-    glTexCoord2f(1.0, 0.0); glVertex3f(-3.5, -2.0, -4.5)   
-    glTexCoord2f(1.0, 1.0); glVertex3f(-3.5, -2.0, 6.0)    
-    glTexCoord2f(0.0, 1.0); glVertex3f(-15.5, -2.0, 6.0)
-    glEnd()
-    
-    # Parte derecha
-    glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(3.5, -2.0, -4.5)  
-    glTexCoord2f(1.0, 0.0); glVertex3f(15.5, -2.0, -4.5)   
-    glTexCoord2f(1.0, 1.0); glVertex3f(15.5, -2.0, 6.0)    
-    glTexCoord2f(0.0, 1.0); glVertex3f(3.5, -2.0, 6.0)   
-    glEnd()
-    
-    # Partes del fondo (derecha)
-    glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(3.5, -2.0, -15.5)  
-    glTexCoord2f(1.0, 0.0); glVertex3f(15.5, -2.0, -15.5)   
-    glTexCoord2f(1.0, 1.0); glVertex3f(15.5, -2.0, -4.5)    
-    glTexCoord2f(0.0, 1.0); glVertex3f(3.5, -2.0, -4.5)
-    glEnd()
-    
-    # Partes del fondo (centro)
-    glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(3.5, -2.0, -15.5)  
-    glTexCoord2f(1.0, 0.0); glVertex3f(-3.5, -2.0, -15.5)   
-    glTexCoord2f(1.0, 1.0); glVertex3f(-3.5, -2.0, -4.5)    
-    glTexCoord2f(0.0, 1.0); glVertex3f(3.5, -2.0, -4.5)
-    glEnd()
-    
-    # Partes del fondo (izquierda)
-    glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(-15.5, -2.0, -15.5)
-    glTexCoord2f(1.0, 0.0); glVertex3f(-3.5, -2.0, -15.5)   
-    glTexCoord2f(1.0, 1.0); glVertex3f(-3.5, -2.0, -4.5)    
-    glTexCoord2f(0.0, 1.0); glVertex3f(-15.5, -2.0, -4.5)
-    glEnd()
-    
-    # Partes del frente (derecha)
-    glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(3.5, -2.0, 6.0)  
-    glTexCoord2f(1.0, 0.0); glVertex3f(15.5, -2.0, 6.0)   
-    glTexCoord2f(1.0, 1.0); glVertex3f(15.5, -2.0, 15.5)    
-    glTexCoord2f(0.0, 1.0); glVertex3f(3.5, -2.0, 15.5)
-    glEnd()
-    
-    # Partes del frente (centro)
-    glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(3.5, -2.0, 6.0)  
-    glTexCoord2f(1.0, 0.0); glVertex3f(-3.5, -2.0, 6.0)   
-    glTexCoord2f(1.0, 1.0); glVertex3f(-3.5, -2.0, 15.5)    
-    glTexCoord2f(0.0, 1.0); glVertex3f(3.5, -2.0, 15.5)
-    glEnd()
-    
-    # Partes del frente (izquierda)
-    glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(-15.5, -2.0, 6.0)  
-    glTexCoord2f(1.0, 0.0); glVertex3f(-3.5, -2.0, 6.0)   
-    glTexCoord2f(1.0, 1.0); glVertex3f(-3.5, -2.0, 15.5)    
-    glTexCoord2f(0.0, 1.0); glVertex3f(-15.5, -2.0, 15.5)
-    glEnd()
-    
     
     #
     # --- Paredes del segundo piso (más pequeño que el primero) ---
     #
     
          # --- Pared derecha (reducida a X=3.5) ---
+    glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, textura_pared)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(3.5, 3.0, -4.5)
@@ -824,9 +803,11 @@ def dibujar_cuarto():
 
     glEnable(GL_TEXTURE_2D)
     
+    
     dibujar_escaleras()
     # Dibujar la puerta (ahora con animación)
     dibujar_puerta()
+    
     
     
 def dibujar_hojas_izquierdo():
@@ -1422,7 +1403,8 @@ def main():
     ventana = inicializar_ventana()
 
     global textura_cielo, textura_Madera, textura_pared, textura_techo, textura_suelo, textura_pasto, textura_puerta
-    global textura_arbol, textura_hojas, prev_time, accumulated_move, cam_pos
+    global textura_arbol, textura_hojas, prev_time, accumulated_move
+
     
     prev_time = glfw.get_time()
     last_time = time.time()  # Inicializar tiempo para la puerta
@@ -1442,7 +1424,6 @@ def main():
     inicializar_sonido('C:\\Medical-room-repo\\Medical-rom\\Minecraft.mp3')
     reproducir_sonido_ambiente(loop=True)
     
-    cam_pos = np.array([0.0, 0.0, 0.0], dtype=np.float32)
     #Bucle principal
     while not glfw.window_should_close(ventana):
         
@@ -1456,15 +1437,9 @@ def main():
         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, [1.0, 1.0, 1.0, 1.0])
         glDepthMask(GL_FALSE)
         
-        dibujar_esfera_skybox(cam_pos, textura_cielo)
+        dibujar_esfera_skybox(camera_pos, textura_cielo)
        
-        glDepthMask(GL_TRUE)
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        
-        glLightfv(GL_LIGHT0, GL_AMBIENT, [0.4, 0.4, 0.4, 1.0])   # luz general más intensa
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, [1.0, 1.0, 1.0, 1.0])   # luz directa intensa
-        glLightfv(GL_LIGHT0, GL_POSITION, [0.0, 10.0, 0.0, 1.0]) # posición de la luz
+       
 
         
         dibujar_cuarto()  #Dibujar el cuarto
