@@ -50,107 +50,7 @@ limites = {
     "max_y": 30.0
     }
 
-#Funcion para validar colisiones mediante coordenadas
-def actualizar_posicion_con_colision(nueva_pos, limites):
-    # Copia la posición para no modificar la original directamente
-    pos = np.copy(nueva_pos)
-    
-    # --- 1. Límites generales del mundo ---
-    pos[0] = np.clip(pos[0], limites["min_x"], limites["max_x"])
-    pos[1] = np.clip(pos[1], limites["min_y"], limites["max_y"])
-    pos[2] = np.clip(pos[2], limites["min_z"], limites["max_z"])
-    
-    # --- 2. Colisiones con la casa ---
-    
-    # Dimensiones de la planta baja
-    casa_min_x = -3.5
-    casa_max_x = 3.5
-    casa_min_z = -4.5
-    casa_max_z = 6.0
-    piso_casa = -2.0
-    techo_casa = 3.0
-    
-    # Dimensiones del segundo piso
-    segundo_min_x = -2.0
-    segundo_max_x = 3.5
-    segundo_min_z = -4.5
-    segundo_max_z = 6.0
-    piso_segundo = 3.0
-    techo_segundo = 6.0
-    
-    # --- 2.1. Colisiones con la planta baja ---
-    if (casa_min_x <= pos[0] <= casa_max_x and 
-        casa_min_z <= pos[2] <= casa_max_z):
-        
-        # Si estamos dentro del volumen de la casa en X y Z
-        if piso_casa < pos[1] < techo_casa:
-            # Dentro de la casa - no hay colisión con paredes internas
-            pass
-        elif pos[1] <= piso_casa:
-            # Colisión con el piso
-            pos[1] = piso_casa + 0.01
-        elif pos[1] >= techo_casa:
-            # Colisión con el techo
-            pos[1] = techo_casa - 0.01
-    
-    # --- 2.2. Colisiones con el segundo piso ---
-    if (segundo_min_x <= pos[0] <= segundo_max_x and 
-        segundo_min_z <= pos[2] <= segundo_max_z):
-        
-        if piso_segundo < pos[1] < techo_segundo:
-            # Dentro del segundo piso
-            pass
-        elif pos[1] <= piso_segundo:
-            # Colisión con el piso del segundo nivel
-            pos[1] = piso_segundo + 0.01
-        elif pos[1] >= techo_segundo:
-            # Colisión con el techo del segundo nivel
-            pos[1] = techo_segundo - 0.01
-    
-    # --- 3. Colisiones con las escaleras ---
-    escalera_min_x = -5.0  # -3.5 (pared) - 1.5 (ancho)
-    escalera_max_x = -3.5
-    escalera_min_z = 3.5 - 28*0.3  # Z final
-    escalera_max_z = 3.5
-    
-    if (escalera_min_x <= pos[0] <= escalera_max_x and 
-        escalera_min_z <= pos[2] <= escalera_max_z):
-        
-        # Calcular altura esperada en este punto de las escaleras
-        progreso = (pos[2] - escalera_min_z) / (escalera_max_z - escalera_min_z)
-        altura_esperada = -2.0 + (1 - progreso) * (5.0)  # Altura total de las escaleras
-        
-        # Margen para el personaje
-        if pos[1] < altura_esperada:
-            pos[1] = altura_esperada + 0.1  # Empujar hacia arriba
-        elif pos[1] > altura_esperada + 0.5:
-            pos[1] = altura_esperada + 0.5  # Limitar altura máxima
-    
-    # --- 4. Colisión con la puerta ---
-    if (abs(pos[2] - 6.0) < 0.5 and  # Cerca de la puerta en Z
-        -0.8 <= pos[0] <= 0.8 and     # Dentro del ancho de la puerta
-        pos[1] < 1.0):                # Debajo del dintel
-        
-        # Si estamos intentando atravesar la puerta
-        if pos[2] > 6.0:  # Intentando entrar
-            pos[2] = 6.0 - 0.1
-        else:  # Intentando salir
-            pos[2] = 6.0 + 0.1
-    
-    # --- 5. Colisión con el hueco de las escaleras al segundo piso ---
-    if (-3.5 <= pos[0] <= -2.5 and 
-        4.0 <= pos[2] <= 5.0 and 
-        techo_casa <= pos[1] <= piso_segundo):
-        # Permitir el paso (no hay colisión aquí)
-        pass
-    elif (casa_min_x <= pos[0] <= casa_max_x and 
-          casa_min_z <= pos[2] <= casa_max_z and
-          techo_casa <= pos[1] <= piso_segundo):
-        # En el espacio entre pisos pero no en las escaleras -> colisión
-        pos[1] = techo_casa - 0.1
-    
-    return pos
-    
+
 
 limites_arbol_derecho = {
     "min_x_d": 10.0,
@@ -161,6 +61,11 @@ limites_arbol_derecho = {
     "max_y_d": -12.5
     
 }
+
+def reaparecer():
+    global camera_pos, normal_height
+    camera_pos = np.array([0.0, normal_height, 12.0], dtype=np.float32)
+
 
 #Función para inicializar la ventana con tamaño fijo
 def inicializar_ventana(titulo="Proyecto OpenGL Paso 1"):
@@ -185,9 +90,14 @@ def inicializar_ventana(titulo="Proyecto OpenGL Paso 1"):
     return ventana
 
 #Funcion para validar colisiones mediante coordenadas
+# Dejamos todo tu código de límites y árboles exactamente como lo tienes:
+
 def actualizar_posicion_con_colision(nueva_pos, limites):
+    global camera_pos
+
     colision = False
-    colision_piso = False # Colisión con el piso
+
+    # Limites globales (por seguridad)
     if nueva_pos[0] < limites["min_x"]:
         nueva_pos[0] = limites["min_x"]
         colision = True
@@ -202,25 +112,39 @@ def actualizar_posicion_con_colision(nueva_pos, limites):
         nueva_pos[2] = limites["max_z"]
         colision = True
 
+    # Colisión piso (respawn)
     if nueva_pos[1] < limites["min_y"]:
-        nueva_pos[1] = limites["min_y"]
-        colision = True
-        colision_piso = True # Colisión con el piso
-    elif nueva_pos[1] > limites["max_y"]:
+        reaparecer()
+        return camera_pos.copy()
+
+    if nueva_pos[1] > limites["max_y"]:
         nueva_pos[1] = limites["max_y"]
         colision = True
-        
-    # Colisiones con el árbol derecho
+
+    # Árboles (ya funcionando)
     if (8.7 <= nueva_pos[0] <= 13.3) and (-13.3 <= nueva_pos[2] <= -8.7):
         return camera_pos.copy()
-    
-    # Colisiones con el árbol izquierdo
+
     if (-13.3 <= nueva_pos[0] <= -8.7) and (-13.3 <= nueva_pos[2] <= -8.7):
         return camera_pos.copy()
 
-    if colision and not colision_piso: # Si hay colisión pero no con el piso, reproducir sonido
+    # -------------------------------
+    # COLISIONES DE LA CASA (CUBO)
+    # -------------------------------
+
+    #
+    #
+    #
+    #
+    #
+
+    if colision:
         reproducir_efecto_sonido('C:\\Medical-room-repo\\Medical-rom\\hit1.mp3')
+
     return nueva_pos
+
+
+
 
 #Funcion para poder procesar las entradas atravez del teclado
 def process_input(window):
@@ -532,7 +456,6 @@ def dibujar_escaleras():
     glEnd()
 
 
-
 def dibujar_esfera_skybox(cam_pos, textura_cielo):
     glPushMatrix()
     glRotatef(90, 1, 0, 0)
@@ -778,6 +701,7 @@ def dibujar_cuarto():
     
     #
     # --- Paredes del segundo piso (más pequeño que el primero) ---
+    #
     
          # --- Pared derecha (reducida a X=3.5) ---
     glBindTexture(GL_TEXTURE_2D, textura_pared)
@@ -1531,6 +1455,7 @@ def main():
         
         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, [1.0, 1.0, 1.0, 1.0])
         glDepthMask(GL_FALSE)
+        
         dibujar_esfera_skybox(cam_pos, textura_cielo)
        
         glDepthMask(GL_TRUE)
@@ -1546,6 +1471,7 @@ def main():
         dibujar_pasto() #Dibuja el pasto del cuadro
         dibujar_arbol_izquierdo() #Dibujar el árbol en la parte izquierda
         dibujar_arbol_derecho() #Dibujar el árbol en la parte derecha
+        
 
         
         #Intercambiar buffers y procesar eventos
