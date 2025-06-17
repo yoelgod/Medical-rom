@@ -50,17 +50,27 @@ limites = {
     "max_y": 30.0
     }
 
+collision_boxes = [
+    # Pared trasera
+    [-3.5, -2.0, -4.5, 3.5, 3.0, -4.5],
 
-
-limites_arbol_derecho = {
-    "min_x_d": 10.0,
-    "max_x_d": 12.0,
-    "min_z_d": -2.2,
-    "max_z_d":  5.0,
-    "min_y_d": -10.5,  
-    "max_y_d": -12.5
+    [-3.5, -2.0, -4.5, -3.5, 3.0, 6.0],  # Pared izquierda
+    [3.5, -2.0, -4.5, 3.5, 3.0, 6.0], 
     
-}
+    # Pared frontal (dividida en dos, dejando hueco para la puerta)
+    [-3.5, -2.0, 6.0, -0.8, 3.0, 6.05],  # izquierda
+    [0.8, -2.0, 6.0, 3.5, 3.0, 6.05],   # derecha
+
+    # Puerta (inicialmente cerrada)
+    [-0.8, -2.0, 5.95, 0.8, 3.0, 6.05],
+
+    # Árboles
+    [-13.3, -2.0, -13.3, -8.7, 9.5, -8.7],
+    [8.7, -2.0, -13.3, 13.3, 9.5, -8.7]
+]
+
+def es_caja_vacia(box):
+    return all(coordenada == 0 for coordenada in box)
 
 #Función para inicializar la ventana con tamaño fijo
 def inicializar_ventana(titulo="Proyecto OpenGL Paso 1"):
@@ -84,111 +94,48 @@ def inicializar_ventana(titulo="Proyecto OpenGL Paso 1"):
 
     return ventana
 
-#Funcion para validar colisiones mediante coordenadas
-# Dejamos todo tu código de límites y árboles exactamente como lo tienes:
-
 def actualizar_posicion_con_colision(nueva_pos, limites):
+    global is_jumping, vertical_velocity
 
-    # -------------------------------
-    # CONFIGURACIÓN DE COLISIONES
-    # -------------------------------
-    colision = False
-    
-    # --- Constantes ---
-    PARED_GROSOR = 1.0
-    SUELO_GROSOR = 0.5
-    TECHO_GROSOR = 0.3
-    MARGEN_CAIDA = 0.2
+    player_radius = 0.1
+    player_height = normal_height if not is_crouching else crouch_height
 
-    # --- Alturas ---
-    PISO_1 = -2.0
-    PISO_2 = 3.0
-    TECHO_1 = 3.0
-    TECHO_2 = 8.0
+    player_min = np.array([nueva_pos[0] - player_radius, nueva_pos[1], nueva_pos[2] - player_radius])
+    player_max = np.array([nueva_pos[0] + player_radius, nueva_pos[1] + player_height, nueva_pos[2] + player_radius])
 
-    # --- Límites casa ---
-    X_MIN, X_MAX = -3.5, 3.5
-    Z_MIN, Z_MAX = -4.5, 6.0
+    colision_objeto = False
+    colision_suelo = False
 
-    # --- Puertas ---
-    PUERTA_FRONTAL = (-0.8, 0.8)  # En Z=6.0
-    PUERTA_TRASERA = (-3.5, -2.5)  # En X=-3.5
-    PUERTA_SEGUNDO = (-2.5, -1.5)  # En Z=1.5
+    for i, box in enumerate(collision_boxes):
+        # Saltar cajas vacías (como puerta abierta)
+        if es_caja_vacia(box):
+            continue
 
-    # ==============================================
-    # 1. SISTEMA DE PISOS/TECHOS (SIMPLIFICADO)
-    # ==============================================
+        box_min, box_max = np.array(box[:3]), np.array(box[3:])
 
-    # Suelo base (exterior)
-    if nueva_pos[1] < PISO_1 + SUELO_GROSOR:
-        nueva_pos[1] = PISO_1
-        return nueva_pos
+        if (player_max[0] > box_min[0] and player_min[0] < box_max[0] and
+            player_max[1] > box_min[1] and player_min[1] < box_max[1] and
+            player_max[2] > box_min[2] and player_min[2] < box_max[2]):
 
-    # Suelo terraza (segundo piso)
-    if (X_MIN <= nueva_pos[0] <= X_MAX) and (1.5 < nueva_pos[2] <= Z_MAX):
-        if PISO_2 - SUELO_GROSOR <= nueva_pos[1] <= PISO_2 + SUELO_GROSOR:
-            nueva_pos[1] = PISO_2
-            return nueva_pos
+            if box_max[1] <= nueva_pos[1] + 0.1:
+                colision_suelo = True
+            else:
+                colision_objeto = True
 
-    # ==============================================
-    # 2. COLISIONES DE PAREDES (ACTUALIZADO)
-    # ==============================================
+    fuera_del_pasto = (
+        nueva_pos[0] < limites["min_x"] or nueva_pos[0] > limites["max_x"] or
+        nueva_pos[2] < limites["min_z"] or nueva_pos[2] > limites["max_z"]
+    )
 
-    def hay_colision_pared(pos):
-        # Pared frontal (Z=6.0)
-        if (Z_MAX - PARED_GROSOR <= pos[2] <= Z_MAX + PARED_GROSOR):
-            if not (PUERTA_FRONTAL[0] <= pos[0] <= PUERTA_FRONTAL[1]):
-                return True
-        
-        # Pared izquierda (X=-3.5)
-        if (X_MIN - PARED_GROSOR <= pos[0] <= X_MIN + PARED_GROSOR):
-            if not (PUERTA_TRASERA[0] <= pos[2] <= PUERTA_TRASERA[1]):
-                return True
-        
-        # Pared derecha (X=3.5)
-        if (X_MAX - PARED_GROSOR <= pos[0] <= X_MAX + PARED_GROSOR):
-            return True
-        
-        # Pared trasera (Z=-4.5)
-        if (Z_MIN - PARED_GROSOR <= pos[2] <= Z_MIN + PARED_GROSOR):
-            return True
-        
-        # Pared segundo piso (Z=1.5)
-        if (1.5 - PARED_GROSOR <= pos[2] <= 1.5 + PARED_GROSOR):
-            if not (PUERTA_SEGUNDO[0] <= pos[0] <= PUERTA_SEGUNDO[1]):
-                return True
-        
-        return False
-
-    # Solo verificar colisiones si estamos dentro del área de la casa
-    if (X_MIN - 2.0 <= nueva_pos[0] <= X_MAX + 2.0) and (Z_MIN - 2.0 <= nueva_pos[2] <= Z_MAX + 2.0):
-        if hay_colision_pared(nueva_pos):
-            return camera_pos.copy()
-
-    # ==============================================
-    # 3. LIMITES DEL MUNDO (EVITAR CAÍDAS)
-    # ==============================================
-    
-    # Limitar altura máxima (evitar pantalla negra al saltar)
-    if nueva_pos[1] > TECHO_2 + 5.0:  # Margen adicional
-        nueva_pos[1] = TECHO_2 + 5.0
-        return nueva_pos
-
-    # Limitar coordenadas globales
-    if (nueva_pos[0] < limites["min_x"] or nueva_pos[0] > limites["max_x"] or
-        nueva_pos[2] < limites["min_z"] or nueva_pos[2] > limites["max_z"]):
+    if fuera_del_pasto:
+        reproducir_efecto_sonido('C:\\Medical-room-repo\\Medical-rom\\hit1.mp3')
         return camera_pos.copy()
 
-            
-    if colision: 
-        reproducir_efecto_sonido('C:\\Medical-room-repo\\Medical-rom\\hit1.mp3')
+    if colision_objeto:
+        return camera_pos.copy()
+
     return nueva_pos
-     # Opcional: reproducir sonido de aterrizaj
     
-
-
-
-
 #Funcion para poder procesar las entradas atravez del teclado
 def process_input(window):
     global camera_pos, is_jumping, vertical_velocity, is_crouching, prev_time, accumulated_move, door_opening
@@ -301,11 +248,9 @@ def mouse_callback(window, xpos, ypos):
 
 #FUncion para poder ver la textura
 def cargar_textura(ruta):
-    #Abrir imagen
     imagen = Image.open(ruta)
     imagen = imagen.transpose(Image.FLIP_TOP_BOTTOM)  #Voltear la imagen para OpenGL
 
-    #Convertir la imagen a un formato adecuado para OpenGL
     ancho, alto = imagen.size
     imagen_data = imagen.tobytes("raw", "RGB", 0, -1)
 
@@ -323,8 +268,6 @@ def cargar_textura(ruta):
     return textura
 
 def dibujar_pasto():
-     # --- Pasto exterior ---
-    # Parte izquierda
     glEnable(GL_TEXTURE_2D)
 
     glBindTexture(GL_TEXTURE_2D, textura_pasto)
@@ -393,63 +336,7 @@ def dibujar_pasto():
     
     glDisable(GL_TEXTURE_2D)
 
-#Funcion para poder procesar las entradas atravez del teclado
-def process_input(window):
-    global camera_pos
-
-    camera_speed = speed
-    direction = np.cross(camera_front, camera_up)
-
-    if glfw.get_key(window, glfw.KEY_W) == glfw.PRESS:
-        nueva_pos = camera_pos + camera_speed * camera_front
-        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
-    if glfw.get_key(window, glfw.KEY_S) == glfw.PRESS:
-        nueva_pos = camera_pos - camera_speed * camera_front
-        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
-    if glfw.get_key(window, glfw.KEY_A) == glfw.PRESS:
-        nueva_pos = camera_pos - camera_speed * direction
-        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
-    if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
-        nueva_pos = camera_pos + camera_speed * direction
-        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
-    if glfw.get_key(window, glfw.KEY_LEFT_CONTROL) == glfw.PRESS:
-        nueva_pos = camera_pos - camera_speed * camera_up
-        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
-    if glfw.get_key(window, glfw.KEY_SPACE) == glfw.PRESS:
-        nueva_pos = camera_pos + camera_speed * camera_up
-        camera_pos[:] = actualizar_posicion_con_colision(nueva_pos, limites)
-
-
-def mouse_callback(window, xpos, ypos):
-    global yaw, pitch, lastX, lastY, first_mouse, camera_front
-
-    if first_mouse:
-        lastX = xpos
-        lastY = ypos
-        first_mouse = False
-
-    xoffset = xpos - lastX
-    yoffset = lastY - ypos
-    lastX = xpos
-    lastY = ypos
-
-    xoffset *= sensitivity
-    yoffset *= sensitivity
-
-    yaw += xoffset
-    pitch += yoffset
-
-    pitch = max(-89.0, min(89.0, pitch))
-
-    front = np.array([
-        math.cos(math.radians(yaw)) * math.cos(math.radians(pitch)),
-        math.sin(math.radians(pitch)),
-        math.sin(math.radians(yaw)) * math.cos(math.radians(pitch))
-    ], dtype=np.float32)
-    camera_front[:] = front / np.linalg.norm(front)
-
 def dibujar_escaleras():
-    
     
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, textura_Madera)
@@ -500,24 +387,15 @@ def dibujar_escaleras():
     glVertex3f(x_sobresale, y_final, z_final_escaleras)
     glEnd()
     
-     # --- Lógica de movimiento ---
-  
-    
-    
-    
-
-
 def dibujar_esfera_skybox(camera_pos, textura_cielo):
     glPushMatrix()
     glRotatef(90, 1, 0, 0)
 
-    
     # Posicionar la esfera en la cámara para que parezca infinita
     glTranslatef(camera_pos[0], camera_pos[1], camera_pos[2])
     
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, textura_cielo)
-    
     
     # Desactiva el depth test para que la esfera no bloquee nada
     glDisable(GL_DEPTH_TEST)
@@ -541,57 +419,56 @@ def dibujar_esfera_skybox(camera_pos, textura_cielo):
     
     glPopMatrix()
 
-
 def dibujar_puerta():  
-    global door_angle, last_time, textura_puerta 
-    
+    global door_angle, last_time, textura_puerta
+
     # Calcular tiempo transcurrido
     current_time = time.time()
     delta_time = current_time - last_time
     last_time = current_time
-    
-    # Actualizar ángulo de la puerta (limitado a 90 grados para apertura interior)
+
+    # Cajas de colisión para la puerta
+    puerta_cerrada = [-0.8, -2.0, 5.95, 0.8, 3.0, 6.05]
+    puerta_abierta = [0, 0, 0, 0, 0, 0]
+
+    # Actualizar la caja de colisión en la lista si existe
+    for i in range(len(collision_boxes)):
+        if collision_boxes[i] == puerta_cerrada or es_caja_vacia(collision_boxes[i]):
+            collision_boxes[i] = puerta_abierta if door_angle >= 45 else puerta_cerrada
+
+    # Actualizar ángulo de apertura
     if door_opening:
         door_angle = min(door_angle + door_speed * delta_time, 90)
     else:
         door_angle = max(door_angle - door_speed * delta_time, 0)
-    
-    # Habilitar texturas
+
+    # Dibujar puerta con textura
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, textura_puerta)
-    
-    # Configurar propiedades de material
-    glColor3f(1, 1, 1)  # Color blanco para que la textura se vea sin tintes
-    
-    # Dibujar la puerta
+    glColor3f(1, 1, 1)
+
     glPushMatrix()
-    # Posicionar el pivote en el borde derecho de la puerta
     glTranslatef(0.8, -2.0, 6.01)
-    # Rotación (negativa para que abra hacia adentro)
     glRotatef(-door_angle, 0, 1, 0)
-    # Compensación para dibujar en la posición correcta
     glTranslatef(-0.8, 0, 0)
-    
-    
-    # Cara frontal de la puerta (con textura)
+
+    # Cara frontal
     glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex3f(-0.8, 0.0, 0.0)   # Esquina inferior izquierda
-    glTexCoord2f(1.0, 0.0); glVertex3f(0.8, 0.0, 0.0)    # Esquina inferior derecha
-    glTexCoord2f(1.0, 1.0); glVertex3f(0.8, 3.0, 0.0)    # Esquina superior derecha
-    glTexCoord2f(0.0, 1.0); glVertex3f(-0.8, 3.0, 0.0)   # Esquina superior izquierda
+    glTexCoord2f(0.0, 0.0); glVertex3f(-0.8, 0.0, 0.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f( 0.8, 0.0, 0.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f( 0.8, 3.0, 0.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-0.8, 3.0, 0.0)
     glEnd()
-    
-    # Cara trasera (con textura invertida horizontalmente)
+
+    # Cara trasera
     glBegin(GL_QUADS)
     glTexCoord2f(1.0, 0.0); glVertex3f(-0.8, 0.0, -0.05)
-    glTexCoord2f(0.0, 0.0); glVertex3f(0.8, 0.0, -0.05)
-    glTexCoord2f(0.0, 1.0); glVertex3f(0.8, 3.0, -0.05)
+    glTexCoord2f(0.0, 0.0); glVertex3f( 0.8, 0.0, -0.05)
+    glTexCoord2f(0.0, 1.0); glVertex3f( 0.8, 3.0, -0.05)
     glTexCoord2f(1.0, 1.0); glVertex3f(-0.8, 3.0, -0.05)
     glEnd()
-    
+
     glPopMatrix()
-    
-    # Deshabilitar texturas
     glDisable(GL_TEXTURE_2D)
 
 def dibujar_cuarto():
@@ -676,12 +553,6 @@ def dibujar_cuarto():
     glTexCoord2f(0.0, 1.0); glVertex3f(-3.5, 3.0, 6.0)
     glEnd()
 
-    
-    #
-    # --- Paredes del segundo piso (más pequeño que el primero) ---
-    #
-    
-         # --- Pared derecha (reducida a X=3.5) ---
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, textura_pared)
     glBegin(GL_QUADS)
@@ -691,8 +562,6 @@ def dibujar_cuarto():
     glTexCoord2f(0.0, 1.0); glVertex3f(3.5, 8.0, -4.5)
     glEnd()
 
-    # --- Pared frontal con puerta ---
-    # Izquierda de la puerta
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(-3.5, 3.0, 1.5)
     glTexCoord2f(1.0, 0.0); glVertex3f(-2.5, 3.0, 1.5)
@@ -759,7 +628,6 @@ def dibujar_cuarto():
     glEnd()
     
         # ===== BARANDAS FRONTALES CONECTADAS =====
-        # ===== BARANDAS CON TEXTURA (medio unidad hacia adelante) =====
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, textura_techo)  # Usando textura de pared
 
@@ -803,12 +671,9 @@ def dibujar_cuarto():
 
     glEnable(GL_TEXTURE_2D)
     
-    
     dibujar_escaleras()
     # Dibujar la puerta (ahora con animación)
     dibujar_puerta()
-    
-    
     
 def dibujar_hojas_izquierdo():
     # --- Hojas ---
@@ -1248,7 +1113,6 @@ def dibujar_hojas_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(7.0, 5.5, -13.0)
     glEnd()
     
-    # Parte frontal (frontal)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -8.0)
     glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -8.0)
@@ -1256,7 +1120,6 @@ def dibujar_hojas_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -8.0)
     glEnd()
     
-    # Parte trasera (frontal)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -10.0)
     glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -10.0)
@@ -1264,7 +1127,6 @@ def dibujar_hojas_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -10.0)
     glEnd()
     
-    # Parte izquierda (frontal)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(13.0, 8.0, -8.0)
     glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -10.0)
@@ -1272,7 +1134,6 @@ def dibujar_hojas_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(13.0, 5.5, -8.0)
     glEnd()
     
-    # Parte derecha (frontal)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -8.0)
     glTexCoord2f(1.0, 0.0); glVertex3f(9.0, 8.0, -10.0)
@@ -1280,7 +1141,6 @@ def dibujar_hojas_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -8.0)
     glEnd()
     
-    # Parte inferior (frontal)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 5.5, -8.0)
     glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 5.5, -8.0)
@@ -1288,7 +1148,6 @@ def dibujar_hojas_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -10.0)
     glEnd()
     
-    # Parte frontal (trasera)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -13.0)
     glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -13.0)
@@ -1296,7 +1155,6 @@ def dibujar_hojas_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -13.0)
     glEnd()
     
-    # Parte trasera (trasera)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -15.0)
     glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -15.0)
@@ -1304,7 +1162,6 @@ def dibujar_hojas_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -15.0)
     glEnd()
     
-    # Parte izquierda (trasera)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(13.0, 8.0, -13.0)
     glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 8.0, -15.0)
@@ -1312,7 +1169,6 @@ def dibujar_hojas_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(13.0, 5.5, -13.0)
     glEnd()
     
-    # Parte derecha (trasera)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 8.0, -13.0)
     glTexCoord2f(1.0, 0.0); glVertex3f(9.0, 8.0, -15.0)
@@ -1320,7 +1176,6 @@ def dibujar_hojas_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(9.0, 5.5, -13.0)
     glEnd()
     
-    # Parte inferior (trasera)
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(9.0, 5.5, -15.0)
     glTexCoord2f(1.0, 0.0); glVertex3f(13.0, 5.5, -15.0)
@@ -1334,8 +1189,6 @@ def dibujar_arbol_derecho():
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, textura_arbol)
     
-    # --- Tronco del árbol ---
-    # Parte frontal 
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(10.0, 5.0, -10.5)
     glTexCoord2f(1.0, 0.0); glVertex3f(12.0, 5.0, -10.5)
@@ -1343,7 +1196,6 @@ def dibujar_arbol_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(10.0, -2.5, -10.5)
     glEnd()
     
-    # Parte trasera 
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(10.0, 5.0, -12.5)
     glTexCoord2f(1.0, 0.0); glVertex3f(12.0, 5.0, -12.5)
@@ -1351,7 +1203,6 @@ def dibujar_arbol_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(10.0, -2.5, -12.5)
     glEnd()
     
-    # Parte izquierda 
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(12.0, 5.0, -10.5)
     glTexCoord2f(1.0, 0.0); glVertex3f(12.0, 5.0, -12.5)
@@ -1359,7 +1210,6 @@ def dibujar_arbol_derecho():
     glTexCoord2f(0.0, 1.0); glVertex3f(12.0, -2.5, -10.5)
     glEnd()
     
-    # Parte derecha 
     glBegin(GL_QUADS)
     glTexCoord2f(0.0, 0.0); glVertex3f(10.0, 5.0, -10.5)
     glTexCoord2f(1.0, 0.0); glVertex3f(10.0, 5.0, -12.5)
@@ -1370,7 +1220,6 @@ def dibujar_arbol_derecho():
     glDisable(GL_TEXTURE_2D)
     dibujar_hojas_derecho()  # Llamar a la función para dibujar las hojas del árbol
     
-# Función para inicializar el sonido
 def inicializar_sonido(ruta_sonido):
     pygame.mixer.init()
     pygame.mixer.music.load(ruta_sonido)
@@ -1386,7 +1235,6 @@ def reproducir_efecto_sonido(ruta_sonido):
 
 # Función para configurar la vista y proyección 3D
 def configurar_vision():
-    # Definir la proyección en 3D (cámara ortogonal)
     glMatrixMode(GL_PROJECTION)  # Establecer modo de proyección
     glLoadIdentity()  # Limpiar la matriz de proyección
     gluPerspective(60, 1200/900, 1.0, 100.0)
@@ -1404,7 +1252,6 @@ def main():
 
     global textura_cielo, textura_Madera, textura_pared, textura_techo, textura_suelo, textura_pasto, textura_puerta
     global textura_arbol, textura_hojas, prev_time, accumulated_move
-
     
     prev_time = glfw.get_time()
     last_time = time.time()  # Inicializar tiempo para la puerta
@@ -1420,14 +1267,14 @@ def main():
     textura_cielo = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\skybox.jpg')
     textura_Madera = cargar_textura('C:\\Medical-room-repo\\Medical-rom\\textura_Madera.png')
     
-    # Inicializar sonido
     inicializar_sonido('C:\\Medical-room-repo\\Medical-rom\\Minecraft.mp3')
     reproducir_sonido_ambiente(loop=True)
+    
+    scamera_pos = np.array([0.0, 0.0, 0.0], dtype=np.float32)
     
     #Bucle principal
     while not glfw.window_should_close(ventana):
         
-        #Limpiar tanto el buffer de color como el buffer de profundidad
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         aplicar_gravedad() # Aplicar gravedad en cada frame
@@ -1439,17 +1286,11 @@ def main():
         
         dibujar_esfera_skybox(camera_pos, textura_cielo)
        
-       
-
-        
         dibujar_cuarto()  #Dibujar el cuarto
         dibujar_pasto() #Dibuja el pasto del cuadro
         dibujar_arbol_izquierdo() #Dibujar el árbol en la parte izquierda
         dibujar_arbol_derecho() #Dibujar el árbol en la parte derecha
         
-
-        
-        #Intercambiar buffers y procesar eventos
         glfw.swap_buffers(ventana)  #Muestra lo que se ha dibujado
         glfw.poll_events()  #Captura eventos del teclado, mouse, etc.
 
