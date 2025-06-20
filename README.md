@@ -77,11 +77,11 @@ First, spilt your terminal in your development environment and then write this c
 
 # Link of the video:
 
-
+https://youtu.be/17p-DTjDJjo?si=bzu9ZOfOISOsxY0P
 
 # Licence:
 
-This project is licensed under the MIT License – see the LICENSE file for details.
+This project is licensed under the *MIT Lincese* – see the LICENSE file for details.
 
 # Authors: 
 
