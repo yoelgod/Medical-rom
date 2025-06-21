@@ -88,4 +88,4 @@ This project is licensed under the *MIT Lincese* – see the LICENSE file for de
 - Soza Mendez Sergio Yamil https://github.com/ShamilUwunt
 - Morales Velazques Diego Antonio https://github.com/DiegoMorales333
 - Guevara Cajina Ervin Ulises https://github.com/SuperVinn
-- Loasiga Garcia Christopher Yoel https://github.com/yoelgod
+- Loasiga Garcia Cristopher Yoel https://github.com/yoelgod
